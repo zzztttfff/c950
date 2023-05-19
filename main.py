@@ -66,35 +66,50 @@ class Truck:
     def __init__(self):
         self.inventory = []
 
-    def load(self, pkg_id):
+    def load_special(self):
         # self.inventory.append(pkg_id)
         for bucket in myHash.table:
             for pkg in bucket:
                 for data in pkg:
                     if type(data) != type('string'):
-
                         # MANUALLY LOADS SPECIAL NOTED PACKAGES
                         if "Can only be on truck 2" in str(data):
                             truck2.inventory.append(data)
                         if int(data.pkg_id) in {13, 14, 15, 16, 19, 20}:
-                            truck2.inventory.append(data)
+                             truck2.inventory.append(data)
 
         for pkg in self.inventory:
             pkg_in_truck = pkg.pkg_id
             for bucket in myHash.table:
                 for index, item in enumerate(bucket):
                     if item[0] == pkg_in_truck:
-                        # print('item[0]: ', item[0], "     pkg_in_truck: ", pkg_in_truck)
-                        # print(index)
+                        bucket.pop(index)
+
+    def load(self, pkg_id):
+        # self.inventory.append(pkg_id)
+        for bucket in myHash.table:
+            for pkg in bucket:
+                for data in pkg:
+                    print(data)
+
+        for pkg in self.inventory:
+            pkg_in_truck = pkg.pkg_id
+            for bucket in myHash.table:
+                for index, item in enumerate(bucket):
+                    if item[0] == pkg_in_truck:
                         bucket.pop(index)
 
     def begin_route(self, location):
         print(location)
 
-    def __repr__(self):
+    def __repr_id__(self):
         return f"Packages: {self.inventory[0].pkg_id}, " + ", ".join(
             [f"{x.pkg_id}" for x in self.inventory[1:len(self.inventory) - 1]]) + " ".join(
             [f", {self.inventory[len(self.inventory) - 1].pkg_id}"])
+    def __repr_address__(self):
+        return f"Addresses: \nID {self.inventory[0].pkg_id}: {self.inventory[0].address}\n" + "".join(
+            [f"ID {x.pkg_id}: {x.address}\n" for x in self.inventory[1:len(self.inventory) - 1]]) + "".join(
+            [f"ID {self.inventory[len(self.inventory) -1].pkg_id}: {self.inventory[len(self.inventory) - 1].address}"])
 
 
 def load_package_file(file):
@@ -147,9 +162,7 @@ def load_dist_file(file):
                 arr.insert(len(arr) - 1, row)
         del arr[len(arr) - 1]
         # for element in arr:
-        #     print(element)
-        # print(arr[0][0])
-        # print()
+            # print(element)
         # print(arr[2][0], arr[2][1], ' is ', arr[2][2], ' miles from ', arr[0][2])
         # print()
 
@@ -159,34 +172,18 @@ load_package_file(r"C:\Users\zacha\Downloads\WGUPS_Package_File.csv")
 load_dist_file(r"C:\Users\zacha\Downloads\WGUPS_Distance_Table.csv")
 truck1 = Truck()
 truck2 = Truck()
-truck2.load(13)
-print(myHash.__repr__())
-print("Truck 2", truck2)
+truck2.load_special()
 
+# ADD TO TRUCK2 PKGS @ LOCATIONS CLOSEST TO CURRENTLY LOADED PACKAGES
+# FIND WHICH PACKAGES ARE CLOSEST TO THE ONES CURRENTLY LOADED
+# DO THIS BY FINDING ADDRESSES OF CURRENTLY LOADED
+print("Truck 2", truck2.__repr_address__())
 
-# for bucket in myHash.table:
-#     for pkg in bucket:
-#         for data in pkg:
-#             if type(data) != type('string'):
-#
-#                 if "Special" in str(data):
-#                     if "Can only be on truck 2" in str(data):
-#                         truck2.load(data)
-#
-#                 # the following packages must be loaded on the same truck
-#                 if int(data.pkg_id) in {13, 14, 15, 16, 19, 20}:
-#                     truck2.load(data)
-#
-# for pkg in truck2.inventory:
-#     pkg_in_truck = pkg.pkg_id
-#     for bucket in myHash.table:
-#         for index, item in enumerate(bucket):
-#             if item[0] == pkg_in_truck:
-#                 print('item[0]: ', item[0], "     pkg_in_truck: ", pkg_in_truck)
-#                 print(index)
-#                 bucket.pop(index)
+# THEN FIND THE DISTANCES TO ADDRESSES OF NON-LOADED PACKAGES
+# LOAD THE CLOSEST PACKAGES UNTIL TRUCK INVENTORY IS FILLED
+# THEN LOAD TRUCK 1 WITH ALL OTHER VIABLE PACKAGES WITH CLOSE NEIGHBORS
+# ONE OF THE TRUCKS WILL REFILL WHEN CLOSE TO HUB
 
-        # print(truck2)
 
 
 
