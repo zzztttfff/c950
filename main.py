@@ -73,15 +73,13 @@ class Truck:
                 for data in pkg:
                     if type(data) != type('string'):
 
-                        if "Special" in str(data):
-                            if "Can only be on truck 2" in str(data):
-                                self.inventory.append(data)
-
-                        # the following packages must be loaded on the same truck
+                        # MANUALLY LOADS SPECIAL NOTED PACKAGES
+                        if "Can only be on truck 2" in str(data):
+                            truck2.inventory.append(data)
                         if int(data.pkg_id) in {13, 14, 15, 16, 19, 20}:
-                            self.inventory.append(data)
+                            truck2.inventory.append(data)
 
-        for pkg in truck2.inventory:
+        for pkg in self.inventory:
             pkg_in_truck = pkg.pkg_id
             for bucket in myHash.table:
                 for index, item in enumerate(bucket):
@@ -163,7 +161,7 @@ truck1 = Truck()
 truck2 = Truck()
 truck2.load(13)
 print(myHash.__repr__())
-# print("Truck 2", truck2)
+print("Truck 2", truck2)
 
 
 # for bucket in myHash.table:
