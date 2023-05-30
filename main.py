@@ -113,6 +113,8 @@ class Package:
 class Truck:
     def __init__(self):
         self.inventory = []
+        self.manual_inventory = []
+        self.manual_inventory_adjust = []
 
     distance_traveled = 0
 
@@ -122,20 +124,27 @@ class Truck:
             for pkg in bucket:
                 for data in pkg:
                     if type(data) != type('string'):
-                        # MANUALLY LOADS SPECIAL NOTED PACKAGES
+                        # MANUALLY LOADS SPECIAL NOTED PACKAGES INTO truck2.inventory
                         if "Can only be on truck 2" in str(data):
                             if data not in truck2.inventory:
                                 truck2.inventory.append(data)
+                                truck2.manual_inventory.append(data)
+                                truck2.manual_inventory_adjust.append(data)
                         if int(data.pkg_id) in {13, 14, 15, 16, 19, 20}:
                             if data not in truck2.inventory:
                                 truck2.inventory.append(data)
-        # REMOVES LOADED PKGS FROM myHash.table
-        for pkg in self.inventory:
-            pkg_in_truck = pkg.pkg_id
-            for bucket in myHash.table:
-                for index, item in enumerate(bucket):
-                    if item[0] == pkg_in_truck:
-                        bucket.pop(index)
+                                truck2.manual_inventory.append(data)
+                                truck2.manual_inventory_adjust.append(data)
+                                # FIND WAY TO INCORPORATE MANUALLY LOADED PACKAGES INTO distance_traveled AND staged_pkg
+                                # SHOULD I JUST PUT t2.distance_traveled += distance HERE? HOW WOULD I GET THE DISTANCE HERE?
+
+        # REMOVES LOADED PKGS FROM myHash.table...MIGHT NOT BE NEEDED, OR WANTED, FOR THAT MATTER.
+        # for pkg in self.inventory:
+        #     pkg_in_truck = pkg.pkg_id
+        #     for bucket in myHash.table:
+        #         for index, item in enumerate(bucket):
+        #             if item[0] == pkg_in_truck:
+        #                 bucket.pop(index)
 
     def load(self, pkg_to_load):
         if len(self.inventory) > 16:
@@ -157,6 +166,14 @@ class Truck:
                     # print('load() pkg[0]: ', pkg[0])
                     return
         return
+
+    # def calc_dist(self):
+    #     print('calc_dist:')
+    #     for box in self.manual_inventory:
+    #         for staged_pkg in staged_pkgs:
+    #             if box in staged_pkg:
+    #                 print(box)
+    #     print()
 
     def __repr_id__(self):
         return f"Packages: {self.inventory[0].pkg_id}, " + ", ".join(
@@ -232,7 +249,7 @@ def stage_trucks():
         # truck2.load(nearest_pkg_to_hub)
         if nearest_pkg_to_hub not in truck2.inventory:
             truck2.inventory.append(nearest_pkg_to_hub)
-        # REMOVE FROM unstaged_pkgs LIST:
+        # REMOVE FROM unstaged_pkgs:
         for thing in unstaged_pkgs:
             if thing[1] == nearest_pkg_to_hub:
                 unstaged_pkgs.remove(thing)
@@ -249,8 +266,14 @@ def stage_trucks():
         for box in truck1.inventory:
             t1count += 1
         while t1count < 16:
-            truck1.load(nearest_pkg_to_hub)
-            # print('LOAD THE PACKAGES: nearest_pkg_to_hub: ', nearest_pkg_to_hub)
+            # truck1.load(nearest_pkg_to_hub)
+            if nearest_pkg_to_hub not in truck1.inventory:
+                truck1.inventory.append(nearest_pkg_to_hub)
+            for thing in unstaged_pkgs:
+                if thing[1] == nearest_pkg_to_hub:
+                    unstaged_pkgs.remove(thing)
+            if nearest_pkg_to_hub in pkgs_at_hub:
+                pkgs_at_hub.remove(nearest_pkg_to_hub)
             t1count += 1
         if t1count == 16:
             # print('dispatch trucks')
@@ -321,7 +344,8 @@ def determine_first_pkg():
                 if dist_to_hub < min_dist_from_hub:
                     min_dist_from_hub = dist_to_hub
                     pkg_nearest_to_hub = unstaged_pkg
-    truck2.inventory.append(pkg_nearest_to_hub[1])
+    if pkg_nearest_to_hub[1] not in truck2.inventory:
+        truck2.inventory.append(pkg_nearest_to_hub[1])
     unstaged_pkgs.remove(pkg_nearest_to_hub)
     return pkg_nearest_to_hub
 
@@ -330,13 +354,17 @@ def determine_next_pkg():
     # DETERMINE NEAREST NEIGHBOR, APPEND, REMOVE.
 
     current_pkg = staged_pkgs[-1]
+    # print('current_pkg:', current_pkg)
 
     unstaged_min_dist_from_current = 100
 
     # GET CURRENT PACKAGE DIST TABLE INFO / AND COMPARE THAT TO UNSTAGED PACKAGE DIST TABLE INFO. FIND MIN DISTANCE AND APPEND THAT TO STAGED PACKAGES
     # MAKE SURE TO COMPARE AGAINST ALL DISTANCES
 
-    # GRABS current_pkg dist_table INFO:
+    # if type(current_pkg) == list:
+    #     return
+
+    # GRABS current_pkg dist_table[0] COLUMN INDEX:
     current_pkg_inx = int
     for dest in dist_table[0]:
         if current_pkg[1].address in dest:
@@ -347,7 +375,7 @@ def determine_next_pkg():
     # SHOWS ROW OF DISTANCES FOR current_pkg:
     current_pkg_dist_table_row_info = []
     for distance in dist_table[current_pkg_inx - 1]:
-        if dist_table[current_pkg_inx - 1].index(distance) > 1:
+        if dist_table[current_pkg_inx - 1].index(distance) > 1:  # DO NOT WANT FIRST OR SECOND COLUMNS
             if distance != '':
                 current_pkg_dist_table_row_info.append(float(distance))
 
@@ -366,16 +394,16 @@ def determine_next_pkg():
     #         print(distance)
     nearest_neighbor = Package
     shortest_distance = 100
-    # SHOWS PACKAGE AND ITS dist_table ROW INDEX! AKA ITS DISTANCE TO current_pkg
+    # SHOWS PACKAGE AND ITS dist_table ROW INDEX, AKA ITS DISTANCE TO current_pkg
     for dest in dist_table[0]:
-        for unstaged_pkg in unstaged_pkgs:
-            if unstaged_pkg[1].address in dest:
+        for unstaged in unstaged_pkgs:
+            if unstaged[1].address in dest:
                 inx = dist_table[0].index(dest)
                 if dist_table[current_pkg_inx - 1][inx] != '':
                     # print(dist_table[current_pkg_inx - 1][inx], unstaged_pkg[1])
                     if float(dist_table[current_pkg_inx - 1][inx]) < shortest_distance:
                         shortest_distance = float(dist_table[current_pkg_inx - 1][inx])
-                        nearest_neighbor = unstaged_pkg
+                        nearest_neighbor = unstaged
     # print(nearest_neighbor[1])
 
     # CHOOSE CLOSEST NEIGHBOR TO current_pkg AND ADD TO TRUCK. BUT FIRST, THERE ARE ONLY 30 PKGS ABOVE. FIND THE OTHER 9 AND COMPARE TO ADDRESS. THEY ARE PROBABLY IN staged_pkgs
@@ -388,33 +416,66 @@ def determine_next_pkg():
             for row in dist_table[1:-1]:
                 if row[inx] != '':
                     # print(row[inx])
-                    for unstaged_pkg in unstaged_pkgs:
-                        if unstaged_pkg[1].address in row[0]:
+                    for unstaged in unstaged_pkgs:
+                        if unstaged[1].address in row[0]:
                             # print(row[inx], unstaged_pkg[1])
                             if float(row[inx]) < shortest_distance:
                                 shortest_distance = float(row[inx])
-                                nearest_neighbor = unstaged_pkg
-    # print(nearest_neighbor[1])
+                                nearest_neighbor = unstaged
+    # print('nearest_neighbor[1]:', nearest_neighbor[1])
+    # ISSUE HERE. truck2.inventory ONLY CAN ADD 5 BEFORE IT REACHES LIMIT. DISTANCE TRAVELED MUST BE CALCULATED SOMEHOW.
+    # staged_pkgs DOESN'T HAVE 3, 13, OR 18, AND ONLY SOMETIMES HAS 38. MAYBE OTHERS CHANGE/MISSING, IDK.
 
-    if len(truck2.inventory) < 16:
-        truck2.inventory.append(nearest_neighbor[1])
+    if nearest_neighbor[1] in truck2.manual_inventory_adjust:
         truck2.distance_traveled += shortest_distance
         staged_pkgs.append(nearest_neighbor)
         unstaged_pkgs.remove(nearest_neighbor)
-        for item in truck2.inventory:
-            print(item)
-        print()
-        determine_next_pkg()
+        truck2.manual_inventory_adjust.remove(nearest_neighbor[1])
+        if len(unstaged_pkgs) > 0:
+            determine_next_pkg()
 
-    elif len(truck1.inventory) < 16:
-        truck1.inventory.append(nearest_neighbor[1])
-        truck1.distance_traveled += shortest_distance
+    elif len(truck2.inventory) < 16:
+        if nearest_neighbor[1] not in truck2.inventory:
+            if nearest_neighbor[1] not in truck1.inventory:
+                truck2.inventory.append(nearest_neighbor[1])
+                truck2.distance_traveled += shortest_distance
         staged_pkgs.append(nearest_neighbor)
         unstaged_pkgs.remove(nearest_neighbor)
+        if len(unstaged_pkgs) > 0:
+            determine_next_pkg()
 
-        determine_next_pkg()
-    # else:
-    #     print('DISPATCH TRUCKS BOIIII')
+    elif len(truck1.inventory) < 16:
+        # print('t1_nearest_neighbor', nearest_neighbor)
+        if nearest_neighbor[1] not in truck1.inventory:
+            if nearest_neighbor[1] not in truck2.inventory:
+                truck1.inventory.append(nearest_neighbor[1])
+                truck1.distance_traveled += shortest_distance
+        staged_pkgs.append(nearest_neighbor)
+        unstaged_pkgs.remove(nearest_neighbor)
+        if len(unstaged_pkgs) > 0:
+            determine_next_pkg()
+
+    elif len(truck2.inventory) == 16:
+        staged = []
+        for staged_box in staged_pkgs:
+            staged.append(staged_box[1])
+        for bad_pkg in truck2.inventory:
+            if bad_pkg not in staged:
+                for unstaged in unstaged_pkgs:
+                    if unstaged[0] == bad_pkg.pkg_id:
+                        staged_pkgs.append(unstaged)
+                        unstaged_pkgs.remove(unstaged)
+                        if bad_pkg in truck2.manual_inventory_adjust:
+                            truck2.manual_inventory_adjust.remove(bad_pkg)
+                if len(unstaged_pkgs) > 0:
+                    determine_next_pkg()
+        # for item in truck2.manual_inventory_adjust:
+        #     print('item', item)
+    else:
+        print('DISPATCH TRUCKS BOIIII')
+
+
+# RUN PROGRAM STUFF
 
 
 myHash = HashTable()
@@ -424,18 +485,65 @@ dist_table = load_dist_file(r"C:\Users\zacha\Downloads\WGUPS_Distance_Table.csv"
 truck2 = Truck()
 truck1 = Truck()
 
+# STARTS AS ALL PACKAGES; PACKAGES GET REMOVED AS THEY ARE STAGED
 unstaged_pkgs = []
 for bucket in myHash.table:
     for pkg in bucket:
         unstaged_pkgs.append(pkg)
 
+# ADDS SPECIAL PACKAGES TO truck2.inventory
 truck2.load_special()
-first_pkg_loaded = determine_first_pkg()
-staged_pkgs = [first_pkg_loaded]
 
+# CREATE staged_pkgs, DETERMINE FIRST PACKAGE IN ROUTE, ADD IT TO staged_pkgs, REMOVE IT FROM unstaged_pkgs, REMOVE FROM truck2.manual_inventory_adjust
+staged_pkgs = [determine_first_pkg()]
+if staged_pkgs[0][1] in truck2.manual_inventory_adjust:
+    truck2.manual_inventory_adjust.remove(staged_pkgs[0][1])
+# print()
+
+# FULLY LOAD BOTH TRUCKS, ADJUST staged_pkgs AND unstaged_pkgs
 for item in unstaged_pkgs:
     determine_next_pkg()
+print()
 
 
+# PRINTSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
+# truck2
+c = 0
+print('truck2.inventory:')
+for item in truck2.inventory:
+    print(item)
+    c += 1
+print(c)
+print()
 
+# truck1
+c = 0
+print('truck1.inventory:')
+for item in truck1.inventory:
+    print(item)
+    c += 1
+print(c)
+print()
+
+# staged_pkgs
+c = 0
+print('staged_pkgs:')
+for item in staged_pkgs:
+    print(item)
+    c += 1
+print(c)
+print()
+
+# unstaged_pkgs
+c = 0
+print('unstaged packages:')
+for unstaged_pkg in unstaged_pkgs:
+    print(unstaged_pkg)
+    c += 1
+print(c)
+print()
+
+# distances
+print('t2distance', truck2.distance_traveled)
+print('t1distance', truck1.distance_traveled)
