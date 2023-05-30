@@ -11,7 +11,7 @@ def load_package_file(file):
                 line_num += 1
             else:
                 for pkg in reader:
-                    if len(pkg) == 8:
+                    if len(pkg) == 9:
                         pkg_id = pkg[0]
                         address = pkg[1]
                         city = pkg[2]
@@ -20,7 +20,8 @@ def load_package_file(file):
                         dd = pkg[5]
                         mass = pkg[6]
                         notes = pkg[7]
-                        package = Package(pkg_id, address, city, state, zip_code, dd, mass, notes)
+                        status = pkg[8]
+                        package = Package(pkg_id, address, city, state, zip_code, dd, mass, notes, status)
                     else:
                         pkg_id = pkg[0]
                         address = pkg[1]
@@ -29,9 +30,9 @@ def load_package_file(file):
                         zip_code = pkg[4]
                         dd = pkg[5]
                         mass = pkg[6]
-                        package = Package(pkg_id, address, city, state, zip_code, dd, mass, notes='')
+                        package = Package(pkg_id, address, city, state, zip_code, dd, mass, notes='', status = '')
 
-                    myHash.insert(pkg_id, package)
+                    myHash.insert_auto(pkg_id, package)
 
 
 def load_dist_file(file):
@@ -58,7 +59,7 @@ class HashTable:
         for i in range(capacity):
             self.table.append([])
 
-    def insert(self, key, item):
+    def insert_auto(self, key, item):
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
         for kvp in bucket_list:
@@ -69,13 +70,16 @@ class HashTable:
         bucket_list.append(kvp)
         return True
 
+    def insert_manually(self, pkg_id, address, city, state, zip_code, dd, mass, notes='', status=''):
+        package = Package(pkg_id, address, city, state, zip_code, dd, mass, notes, status)
+        myHash.insert_auto(pkg_id, package)
+
     def search(self, key):
-        bucket = hash(key) % len(self.table)
-        bucket_list = self.table[bucket]
-        for kvp in bucket_list:
-            if kvp[0] == key:
-                return kvp[1]
-            return None
+        for bucket in myHash.table:
+            for item in bucket:
+                if int(item[0]) == key:
+                    return item[1]
+        return None
 
     def remove(self, key):
         bucket = hash(key) % len(self.table)
@@ -91,7 +95,7 @@ class HashTable:
 
 
 class Package:
-    def __init__(self, pkg_id, address, city, state, zip_code, dd, mass, notes):
+    def __init__(self, pkg_id, address, city, state, zip_code, dd, mass, notes, status):
         self.pkg_id = pkg_id
         self.address = address
         self.city = city
@@ -100,14 +104,15 @@ class Package:
         self.dd = dd
         self.mass = mass
         self.notes = notes
+        self.status = status
 
     def __str__(self):
         if self.notes != '':
             return f"ID: {self.pkg_id}, Address: {self.address}, {self.city}, {self.state} {self.zip_code}; Delivery " \
-                   f"Deadline: {self.dd}; Mass: {self.mass}kg; Special Notes: {self.notes}."
+                   f"Deadline: {self.dd}; Mass: {self.mass}kg; Special Notes: {self.notes}; Status: {self.status}."
         else:
             return f"ID: {self.pkg_id}, Address: {self.address}, {self.city}, {self.state} {self.zip_code}; Delivery " \
-                   f"Deadline: {self.dd}; Mass: {self.mass}kg"
+                   f"Deadline: {self.dd}; Mass: {self.mass}kg; Status: {self.status}"
 
 
 class Truck:
@@ -186,155 +191,7 @@ class Truck:
             [f"ID {self.inventory[len(self.inventory) - 1].pkg_id}: {self.inventory[len(self.inventory) - 1].address}"])
 
 
-# Find and deliver package closest to hub
-def stage_trucks():
-    # SHOW PACKAGES THAT HAVE YET TO BE LOADED
-    pkgs_at_hub = []
-    for pkg in myHash.table:
-        for item in pkg:
-            pkgs_at_hub.append(item[1])
-
-    # LOOK AT ALL POSSIBLE PKG LOCATIONS, DETERMINE WHICH SET HAS CLOSEST PKG TO HUB:
-    # DETERMINE MIN DIST TO HUB FOR UNLOADED PACKAGES:
-    unloaded_min_dist_from_hub = 100
-    nearest_unloaded_pkg = Package
-    for dest in dist_table:
-        for pkg in pkgs_at_hub:
-            if pkg.address in dest[0]:
-                dist_to_hub = float(dest[2])
-                if dist_to_hub < unloaded_min_dist_from_hub:
-                    unloaded_min_dist_from_hub = dist_to_hub
-                    nearest_unloaded_pkg = pkg
-
-    # DETERMINE MIN DIST TO HUB FOR TRUCK2 LOADED PACKAGES:
-    t2loaded_min_dist_from_hub = 100
-    nearest_t2_loaded_pkg = Package
-    for dest in dist_table:
-        for pkg in truck2.inventory:
-            if pkg.address in dest[0]:
-                dist_to_hub = float(dest[2])
-                if dist_to_hub < t2loaded_min_dist_from_hub:
-                    t2loaded_min_dist_from_hub = dist_to_hub
-                    nearest_t2_loaded_pkg = pkg
-
-    # DETERMINE MIN DIST TO HUB FOR TRUCK1 LOADED PACKAGES:
-    t1loaded_min_dist_from_hub = 100
-    nearest_t1_loaded_pkg = Package
-    for dest in dist_table:
-        for pkg in truck1.inventory:
-            if pkg.address in dest[0]:
-                dist_to_hub = float(dest[2])
-                if dist_to_hub < t1loaded_min_dist_from_hub:
-                    t1loaded_min_dist_from_hub = dist_to_hub
-                    nearest_t1_loaded_pkg = pkg
-
-    if t2loaded_min_dist_from_hub < t1loaded_min_dist_from_hub:
-        loaded_min_dist_from_hub = t2loaded_min_dist_from_hub
-        nearest_loaded_pkg = nearest_t2_loaded_pkg
-    else:
-        loaded_min_dist_from_hub = t1loaded_min_dist_from_hub
-        nearest_loaded_pkg = nearest_t1_loaded_pkg
-
-    if loaded_min_dist_from_hub < unloaded_min_dist_from_hub:
-        min_dist_from_hub = loaded_min_dist_from_hub
-        nearest_pkg_to_hub = nearest_loaded_pkg
-    else:
-        min_dist_from_hub = unloaded_min_dist_from_hub
-        nearest_pkg_to_hub = nearest_unloaded_pkg
-
-    t2count = 0
-    for box in truck2.inventory:
-        t2count += 1
-    while t2count < 16:
-        # truck2.load(nearest_pkg_to_hub)
-        if nearest_pkg_to_hub not in truck2.inventory:
-            truck2.inventory.append(nearest_pkg_to_hub)
-        # REMOVE FROM unstaged_pkgs:
-        for thing in unstaged_pkgs:
-            if thing[1] == nearest_pkg_to_hub:
-                unstaged_pkgs.remove(thing)
-        # IF PKG WAS AT HUB, REMOVE FROM pkgs_at_hub LIST:
-        if nearest_pkg_to_hub in pkgs_at_hub:
-            pkgs_at_hub.remove(nearest_pkg_to_hub)
-        t2count += 1
-        if len(unstaged_pkgs) < 40:
-            current_location = nearest_pkg_to_hub.address
-            current_pkg = nearest_pkg_to_hub
-            # determine_next_pkg(current_pkg)
-    if t2count == 16:
-        t1count = 0
-        for box in truck1.inventory:
-            t1count += 1
-        while t1count < 16:
-            # truck1.load(nearest_pkg_to_hub)
-            if nearest_pkg_to_hub not in truck1.inventory:
-                truck1.inventory.append(nearest_pkg_to_hub)
-            for thing in unstaged_pkgs:
-                if thing[1] == nearest_pkg_to_hub:
-                    unstaged_pkgs.remove(thing)
-            if nearest_pkg_to_hub in pkgs_at_hub:
-                pkgs_at_hub.remove(nearest_pkg_to_hub)
-            t1count += 1
-        if t1count == 16:
-            # print('dispatch trucks')
-            return
-
-    # # LOAD THE PACKAGES
-    # for dest in dist_table:
-    #     # HUB:
-    #     for pkg in pkgs_at_hub:
-    #         if pkg.address in dest[0]:
-    #             if float(dest[2]) == min_dist_from_hub:
-    #
-    #                 t2count = 0
-    #                 for box in truck2.inventory:
-    #                     t2count += 1
-    #                 while t2count < 16:
-    #                     # truck2.load(nearest_pkg_to_hub)
-    #                     truck2.inventory.append(nearest_pkg_to_hub)
-    #                     # IF IT WAS AT HUB, THIS 'IF' REMOVES IT FROM HUB LIST:
-    #                     if nearest_pkg_to_hub in pkgs_at_hub:
-    #                         pkgs_at_hub.remove(nearest_pkg_to_hub)
-    #                     t2count += 1
-    #                 if t2count == 16:
-    #
-    #                     t1count = 0
-    #                     for box in truck1.inventory:
-    #                         t1count += 1
-    #                     while t1count < 16:
-    #                         truck1.load(nearest_pkg_to_hub)
-    #                         # print('LOAD THE PACKAGES: nearest_pkg_to_hub: ', nearest_pkg_to_hub)
-    #                         t1count += 1
-    #                     if t1count == 16:
-    #                         print('dispatch trucks')
-    #
-    # # THIS HELPS THE ABOVE TO SHOW WHERE PKG CLOSEST TO HUB IS LOCATED
-    # # TRUCK2:
-    # for pkg in truck2.inventory:
-    #     if pkg.address in dest[0]:
-    #         if float(dest[2]) == min_dist_from_hub:
-    #             count = 0
-    #             for box in truck2.inventory:
-    #                 count += 1
-    #                 while count < 16:
-    #                     # truck2.load(pkg)
-    #                     truck2.inventory.append(nearest_pkg_to_hub)
-    #                     unstaged_pkgs.remove(nearest_pkg_to_hub)  # IF LENGTH < 40 FIND ADDRESS OF LAST ELEMENT (unstaged_pkgs[-1?]
-    #                     count += 1
-    #     # # TRUCK1:
-    #     # for pkg in truck1.inventory:
-    #     #     if pkg.address in dest[0]:
-    #     #         if float(dest[2]) == min_dist_from_hub:
-    #     #             count = 0
-    #     #             for box in truck2.inventory:
-    #     #                 if count < 15:
-    #     #                     count += 1
-    #     #                 while count < 15:
-    #     #                     truck2.load(pkg)
-    #     #                     count += 1
-
-
-# LOAD PKG WITH DESTINATION CLOSEST TO HUB
+# LOAD PKG CLOSEST TO HUB
 def determine_first_pkg():
     min_dist_from_hub = 100
     for dest in dist_table:
@@ -346,6 +203,8 @@ def determine_first_pkg():
                     pkg_nearest_to_hub = unstaged_pkg
     if pkg_nearest_to_hub[1] not in truck2.inventory:
         truck2.inventory.append(pkg_nearest_to_hub[1])
+
+    truck2.distance_traveled += min_dist_from_hub
     unstaged_pkgs.remove(pkg_nearest_to_hub)
     return pkg_nearest_to_hub
 
@@ -358,40 +217,24 @@ def determine_next_pkg():
 
     unstaged_min_dist_from_current = 100
 
-    # GET CURRENT PACKAGE DIST TABLE INFO / AND COMPARE THAT TO UNSTAGED PACKAGE DIST TABLE INFO. FIND MIN DISTANCE AND APPEND THAT TO STAGED PACKAGES
-    # MAKE SURE TO COMPARE AGAINST ALL DISTANCES
-
-    # if type(current_pkg) == list:
-    #     return
-
     # GRABS current_pkg dist_table[0] COLUMN INDEX:
     current_pkg_inx = int
     for dest in dist_table[0]:
         if current_pkg[1].address in dest:
             current_pkg_inx = dist_table[0].index(dest)
-            # print('current_inx:', current_pkg_inx)
-            # print(dist_table[current_pkg_inx - 1])
 
     # SHOWS ROW OF DISTANCES FOR current_pkg:
-    current_pkg_dist_table_row_info = []
-    for distance in dist_table[current_pkg_inx - 1]:
-        if dist_table[current_pkg_inx - 1].index(distance) > 1:  # DO NOT WANT FIRST OR SECOND COLUMNS
-            if distance != '':
-                current_pkg_dist_table_row_info.append(float(distance))
-
-    # NEED TO SHOW WHICH PKG HOLDS WHICH DISTANCE
-    # THAT IS, WHICH PKG THE INDEX OF dist_table[0] THAT CORRESPONDS TO THE COLUMN DISTANCE
-    # THIS BLOCK MAY NOT BE NEEDED. DON'T THINK ANY VARIABLE NEEDS TO BE MADE HERE
-    # for unstaged_pkg in unstaged_pkgs:
-    #     for dest in dist_table[0]:
-    #         if unstaged_pkg[1].address in dest:
-    #             print(unstaged_pkg[1], dist_table[0].index(dest))
-
+    # current_pkg_dist_table_row_info = []
+    # for distance in dist_table[current_pkg_inx - 1]:
+    #     if dist_table[current_pkg_inx - 1].index(distance) > 1:  # DO NOT WANT FIRST OR SECOND COLUMNS
+    #         if distance != '':
+    #             current_pkg_dist_table_row_info.append(float(distance))
     # FIND MIN DISTANCE IN THAT dist_table ROW AND SEE IF THE CORRESPONDING PKG IS IN unstaged_pkg. AFTER THIS, REMEMBER TO CHECK AGAINST ALLLL PACKAGES
     # current_pkg_dist_table_row_info.sort()
     # for distance in current_pkg_dist_table_row_info:
     #     if distance > 0:
     #         print(distance)
+
     nearest_neighbor = Package
     shortest_distance = 100
     # SHOWS PACKAGE AND ITS dist_table ROW INDEX, AKA ITS DISTANCE TO current_pkg
@@ -406,10 +249,7 @@ def determine_next_pkg():
                         nearest_neighbor = unstaged
     # print(nearest_neighbor[1])
 
-    # CHOOSE CLOSEST NEIGHBOR TO current_pkg AND ADD TO TRUCK. BUT FIRST, THERE ARE ONLY 30 PKGS ABOVE. FIND THE OTHER 9 AND COMPARE TO ADDRESS. THEY ARE PROBABLY IN staged_pkgs
-    # NOPE. ONLY ONE IN STAGED PACKAGES, WHICH IS THE FIRST PACKAGE, SO THAT IS CORRECT. I THINK THEY ARE THE PACKAGES THAT CORRESPOND TO EMPTY INDICES IN THAT dist_table ROW.
-    # FIND WAY TO ACCESS THESE DISTANCES. I SHOULD BE ABLE TO INVERT THE 2D LIST INDICES TO ACCESS THE DESIRED COLUMN BEFORE THE ROW.
-    # ACCESS THE current_pkg INDEX FROM dist_table[0] AND THEN ITERATE DOWN THRU dist_table[n]
+    # DETERMINE nearest_neighbor AND shortest_distance TO current_pkg:
     for dest in dist_table[0]:
         if current_pkg[1].address in dest:
             inx = dist_table[0].index(dest)
@@ -422,10 +262,8 @@ def determine_next_pkg():
                             if float(row[inx]) < shortest_distance:
                                 shortest_distance = float(row[inx])
                                 nearest_neighbor = unstaged
-    # print('nearest_neighbor[1]:', nearest_neighbor[1])
-    # ISSUE HERE. truck2.inventory ONLY CAN ADD 5 BEFORE IT REACHES LIMIT. DISTANCE TRAVELED MUST BE CALCULATED SOMEHOW.
-    # staged_pkgs DOESN'T HAVE 3, 13, OR 18, AND ONLY SOMETIMES HAS 38. MAYBE OTHERS CHANGE/MISSING, IDK.
 
+    # ADD PACKAGES FROM manual_inventory
     if nearest_neighbor[1] in truck2.manual_inventory_adjust:
         truck2.distance_traveled += shortest_distance
         staged_pkgs.append(nearest_neighbor)
@@ -434,6 +272,7 @@ def determine_next_pkg():
         if len(unstaged_pkgs) > 0:
             determine_next_pkg()
 
+    # ADD TO truck2 UNTIL FILLED
     elif len(truck2.inventory) < 16:
         if nearest_neighbor[1] not in truck2.inventory:
             if nearest_neighbor[1] not in truck1.inventory:
@@ -444,33 +283,34 @@ def determine_next_pkg():
         if len(unstaged_pkgs) > 0:
             determine_next_pkg()
 
+    # ADD TO truck1 AFTER truck2 FILLED
     elif len(truck1.inventory) < 16:
-        # print('t1_nearest_neighbor', nearest_neighbor)
         if nearest_neighbor[1] not in truck1.inventory:
             if nearest_neighbor[1] not in truck2.inventory:
                 truck1.inventory.append(nearest_neighbor[1])
                 truck1.distance_traveled += shortest_distance
-        staged_pkgs.append(nearest_neighbor)
-        unstaged_pkgs.remove(nearest_neighbor)
+                staged_pkgs.append(nearest_neighbor)  # I MOVED THIS INTO THE TWO IF LOOPS. IF ERROR, MOVE LEFT 2 TABS
+                unstaged_pkgs.remove(nearest_neighbor)
         if len(unstaged_pkgs) > 0:
             determine_next_pkg()
 
+    # ADD PACKAGES THAT DO NOT SHOW UP IN staged_pkgs
     elif len(truck2.inventory) == 16:
-        staged = []
+        staged_boxes = []
         for staged_box in staged_pkgs:
-            staged.append(staged_box[1])
+            staged_boxes.append(staged_box[1])
         for bad_pkg in truck2.inventory:
-            if bad_pkg not in staged:
+            if bad_pkg not in staged_boxes:
                 for unstaged in unstaged_pkgs:
                     if unstaged[0] == bad_pkg.pkg_id:
                         staged_pkgs.append(unstaged)
                         unstaged_pkgs.remove(unstaged)
+                        truck2.distance_traveled += shortest_distance
                         if bad_pkg in truck2.manual_inventory_adjust:
                             truck2.manual_inventory_adjust.remove(bad_pkg)
                 if len(unstaged_pkgs) > 0:
                     determine_next_pkg()
-        # for item in truck2.manual_inventory_adjust:
-        #     print('item', item)
+
     else:
         print('DISPATCH TRUCKS BOIIII')
 
@@ -498,51 +338,49 @@ truck2.load_special()
 staged_pkgs = [determine_first_pkg()]
 if staged_pkgs[0][1] in truck2.manual_inventory_adjust:
     truck2.manual_inventory_adjust.remove(staged_pkgs[0][1])
-# print()
 
 # FULLY LOAD BOTH TRUCKS, ADJUST staged_pkgs AND unstaged_pkgs
 for item in unstaged_pkgs:
     determine_next_pkg()
-print()
 
 
 # PRINTSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
-# truck2
-c = 0
-print('truck2.inventory:')
-for item in truck2.inventory:
-    print(item)
-    c += 1
-print(c)
-print()
-
-# truck1
-c = 0
-print('truck1.inventory:')
-for item in truck1.inventory:
-    print(item)
-    c += 1
-print(c)
-print()
-
-# staged_pkgs
-c = 0
-print('staged_pkgs:')
-for item in staged_pkgs:
-    print(item)
-    c += 1
-print(c)
-print()
-
-# unstaged_pkgs
-c = 0
-print('unstaged packages:')
-for unstaged_pkg in unstaged_pkgs:
-    print(unstaged_pkg)
-    c += 1
-print(c)
-print()
+# # truck2
+# c = 0
+# print('truck2.inventory:')
+# for item in truck2.inventory:
+#     print(item)
+#     c += 1
+# print(c)
+# print()
+#
+# # truck1
+# c = 0
+# print('truck1.inventory:')
+# for item in truck1.inventory:
+#     print(item)
+#     c += 1
+# print(c)
+# print()
+#
+# # staged_pkgs
+# c = 0
+# print('staged_pkgs:')
+# for item in staged_pkgs:
+#     print(item)
+#     c += 1
+# print(c)
+# print()
+#
+# # unstaged_pkgs
+# c = 0
+# print('unstaged packages:')
+# for unstaged_pkg in unstaged_pkgs:
+#     print(unstaged_pkg)
+#     c += 1
+# print(c)
+# print()
 
 # distances
 print('t2distance', truck2.distance_traveled)
