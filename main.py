@@ -1,5 +1,6 @@
 # Zachary Finegan 001122345
 import csv
+import time
 
 
 def load_package_file(file):
@@ -120,6 +121,7 @@ class Truck:
         self.inventory = []
         self.manual_inventory = []
         self.manual_inventory_adjust = []
+        self.route = []
 
     distance_traveled = 0
 
@@ -205,6 +207,7 @@ def determine_first_pkg():
         truck2.inventory.append(pkg_nearest_to_hub[1])
 
     truck2.distance_traveled += min_dist_from_hub
+    truck2.route.append(min_dist_from_hub)
     unstaged_pkgs.remove(pkg_nearest_to_hub)
     return pkg_nearest_to_hub
 
@@ -266,6 +269,7 @@ def determine_next_pkg():
     # ADD PACKAGES FROM manual_inventory
     if nearest_neighbor[1] in truck2.manual_inventory_adjust:
         truck2.distance_traveled += shortest_distance
+        truck2.route.append(shortest_distance)
         staged_pkgs.append(nearest_neighbor)
         unstaged_pkgs.remove(nearest_neighbor)
         truck2.manual_inventory_adjust.remove(nearest_neighbor[1])
@@ -278,6 +282,7 @@ def determine_next_pkg():
             if nearest_neighbor[1] not in truck1.inventory:
                 truck2.inventory.append(nearest_neighbor[1])
                 truck2.distance_traveled += shortest_distance
+                truck2.route.append(shortest_distance)
         staged_pkgs.append(nearest_neighbor)
         unstaged_pkgs.remove(nearest_neighbor)
         if len(unstaged_pkgs) > 0:
@@ -289,6 +294,7 @@ def determine_next_pkg():
             if nearest_neighbor[1] not in truck2.inventory:
                 truck1.inventory.append(nearest_neighbor[1])
                 truck1.distance_traveled += shortest_distance
+                truck1.route.append(shortest_distance)
                 staged_pkgs.append(nearest_neighbor)  # I MOVED THIS INTO THE TWO IF LOOPS. IF ERROR, MOVE LEFT 2 TABS
                 unstaged_pkgs.remove(nearest_neighbor)
         if len(unstaged_pkgs) > 0:
@@ -306,6 +312,7 @@ def determine_next_pkg():
                         staged_pkgs.append(unstaged)
                         unstaged_pkgs.remove(unstaged)
                         truck2.distance_traveled += shortest_distance
+                        truck2.route.append(shortest_distance)
                         if bad_pkg in truck2.manual_inventory_adjust:
                             truck2.manual_inventory_adjust.remove(bad_pkg)
                 if len(unstaged_pkgs) > 0:
@@ -314,6 +321,45 @@ def determine_next_pkg():
     else:
         print('DISPATCH TRUCKS BOIIII')
 
+
+def run_interface():
+    choice = input("Enter 1 to search by package number. \nEnter 2 to search by time.\n")
+    if choice == '1':
+        pkg_num = input("Enter package number:")
+        for box in staged_pkgs:
+            if box[1].pkg_id == pkg_num:
+                print(box[1])
+    if choice == '2':
+        print('welp')
+
+
+def dispatch_trucks():
+    # AT 8:00 TRUCKS LEAVE HUB
+    # TIME = MILES / 18MPH X 60
+    start_time = time.time()
+    i = 0
+    for staged_pkg in staged_pkgs:
+        for box in truck2.inventory:
+            if staged_pkg[1] == box:
+                print(box, truck2.route[i])
+                i += 1
+    print()
+# GET INDEX OF TIME SO I CAN DO THESE CALCULATIONS
+def calc_time(time):
+    if time < 1000:
+        time = str(time)
+        minutes = (str(time[1]) * 10 + str(time[2]))
+        hours = (time[0] - 8)
+        total_minutes = minutes + hours * 60
+        print(total_minutes)
+    else:
+        print('past 10')
+
+def calc_status(time):
+    current_time = time
+    minutes_traveled = time - 800
+    # TRUCK MOVES @18MPH. INSERT A TIME, WHICH WILL BE CALCULATED AS 800 + X TO DETERMINE
+    # HOW MANY MINUTES HAVE PASSED, AND THUS, HOW MANY MILES HAVE BEEN TRAVELED.
 
 # RUN PROGRAM STUFF
 
@@ -343,6 +389,7 @@ if staged_pkgs[0][1] in truck2.manual_inventory_adjust:
 for item in unstaged_pkgs:
     determine_next_pkg()
 
+dispatch_trucks()
 
 # PRINTSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
@@ -383,5 +430,9 @@ for item in unstaged_pkgs:
 # print()
 
 # distances
-print('t2distance', truck2.distance_traveled)
-print('t1distance', truck1.distance_traveled)
+# print('t2distance', truck2.distance_traveled)
+# print('t1distance', truck1.distance_traveled)
+
+# run_interface()
+
+calc_time(859)
