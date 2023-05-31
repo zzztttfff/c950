@@ -1,6 +1,6 @@
 # Zachary Finegan 001122345
 import csv
-import time
+import math
 
 
 def load_package_file(file):
@@ -336,7 +336,7 @@ def run_interface():
 def dispatch_trucks():
     # AT 8:00 TRUCKS LEAVE HUB
     # TIME = MILES / 18MPH X 60
-    start_time = time.time()
+    # start_time = time.time()
     i = 0
     for staged_pkg in staged_pkgs:
         for box in truck2.inventory:
@@ -344,16 +344,34 @@ def dispatch_trucks():
                 print(box, truck2.route[i])
                 i += 1
     print()
-# GET INDEX OF TIME SO I CAN DO THESE CALCULATIONS
+
+
 def calc_time(time):
     if time < 1000:
         time = str(time)
-        minutes = (str(time[1]) * 10 + str(time[2]))
-        hours = (time[0] - 8)
+        if int(str(time[-2])) > 5:
+            print('ERROR IN TIME < 1000')
+            return
+        minutes = int(str(time[-2])) * 10 + int(str(time[-1]))
+        hours = (int(str(time[-3])) - 8)
         total_minutes = minutes + hours * 60
-        print(total_minutes)
+        hours_min = total_minutes / 60
+        print('hours_min', hours_min)
+        print('total min', total_minutes)
     else:
-        print('past 10')
+        time = str(time)
+        if int(str(time[-4])) > 2 or int(str(time[-2])) > 5 or int(str(time[-4])) == 2 and int(str(time[-3])) > 3:
+            print('ERROR IN TIME >= 1000')
+            return
+        input_minutes = int(str(time[-2])) * 10 + int(str(time[-1]))
+        input_hours = int(str(time[-4])) * 10 + (int(str(time[-3])) - 8)
+        total_minutes = input_minutes + input_hours * 60
+        hours = math.floor(total_minutes / 60)
+        mins = total_minutes % 60
+        hours_and_mins = total_minutes / 60
+        print(time, 'is', hours, 'hours and', mins, 'mins after 800.')
+        print('total min', total_minutes)
+
 
 def calc_status(time):
     current_time = time
@@ -435,4 +453,4 @@ dispatch_trucks()
 
 # run_interface()
 
-calc_time(859)
+calc_time(2359)
