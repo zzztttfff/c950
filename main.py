@@ -212,6 +212,7 @@ def determine_first_pkg():
     return pkg_nearest_to_hub
 
 
+# LOAD THE OTHER 31 PACKAGES. STILL LEAVES REMAINING PACKAGES TO BE LOADED.
 def determine_next_pkg():
     # DETERMINE NEAREST NEIGHBOR, APPEND, REMOVE.
 
@@ -333,31 +334,39 @@ def run_interface():
         print('welp')
 
 
-def dispatch_trucks():
-    # AT 8:00 TRUCKS LEAVE HUB
+# NOT SURE IF THIS WILL BE NEEDED AFTER CALC_STATUS IS IMPLEMENTED, AS CALC_STATUS WILL HAVE TO
+# DETERMINE WHERE THE TRUCK IS AT A SPECIFIED TIME.
+# def dispatch_trucks():
+    # AT 800 TRUCKS LEAVE HUB
     # TIME = MILES / 18MPH X 60
     # start_time = time.time()
-    i = 0
-    for staged_pkg in staged_pkgs:
-        for box in truck2.inventory:
-            if staged_pkg[1] == box:
-                print(box, truck2.route[i])
-                i += 1
-    print()
+    # i = 0
+    # distance_total = 0
+    # for staged_pkg in staged_pkgs:
+    #     for box in truck2.inventory:
+    #         if staged_pkg[1] == box:
+    #             distance_total += truck2.route[i]
+    #             print('It took', truck2.route[i], 'miles to drop off package', box.pkg_id + '. Total distance:', round(distance_total,2), 'mi.')
+    #             i += 1
+    # print()
 
 
 def calc_time(time):
     if time < 1000:
+        if time < 800:
+            print('ERROR. TRUCKS HAVE NOT YET BEEN DISPATCHED.')
+            return
         time = str(time)
         if int(str(time[-2])) > 5:
             print('ERROR IN TIME < 1000')
             return
-        minutes = int(str(time[-2])) * 10 + int(str(time[-1]))
-        hours = (int(str(time[-3])) - 8)
-        total_minutes = minutes + hours * 60
-        hours_min = total_minutes / 60
-        print('hours_min', hours_min)
-        print('total min', total_minutes)
+        input_minutes = int(str(time[-2])) * 10 + int(str(time[-1]))
+        input_hours = (int(str(time[-3])) - 8)
+        total_minutes = input_minutes + input_hours * 60
+        hours = math.floor(total_minutes / 60)
+        mins = total_minutes % 60
+        # print(time, 'is', hours, 'hours and', mins, 'mins after 800. That\'s', total_minutes, 'minutes.')
+        return total_minutes
     else:
         time = str(time)
         if int(str(time[-4])) > 2 or int(str(time[-2])) > 5 or int(str(time[-4])) == 2 and int(str(time[-3])) > 3:
@@ -369,15 +378,51 @@ def calc_time(time):
         hours = math.floor(total_minutes / 60)
         mins = total_minutes % 60
         hours_and_mins = total_minutes / 60
-        print(time, 'is', hours, 'hours and', mins, 'mins after 800.')
-        print('total min', total_minutes)
+        # print(time, 'is', hours, 'hours and', mins, 'mins after 800. That\'s', total_minutes, 'minutes.')
+        return total_minutes
 
 
-def calc_status(time):
-    current_time = time
-    minutes_traveled = time - 800
-    # TRUCK MOVES @18MPH. INSERT A TIME, WHICH WILL BE CALCULATED AS 800 + X TO DETERMINE
-    # HOW MANY MINUTES HAVE PASSED, AND THUS, HOW MANY MILES HAVE BEEN TRAVELED.
+def calc_status(given_time):
+
+    current_time = 800
+    minutes_driven = calc_time(given_time)
+
+    t2staged = []
+    for pkg in staged_pkgs:
+        for item in truck2.inventory:
+            if pkg[1] == item:
+                t2staged.append(item)
+
+    working_mileage = minutes_driven * .3
+    print('working_mileage:', working_mileage)
+
+    dropped_off_pkgs = []
+
+    distance_traveled = 0
+    stop_number = 0
+    for distance in truck2.route:
+        if distance_traveled + distance <= working_mileage:
+            distance_traveled += distance
+            delivery_time = distance_traveled
+            stop_number += 1
+        else:
+            # return this
+            for pkg in t2staged[:stop_number]:
+                dropped_off_pkgs.append(pkg)
+            distance_difference = round(working_mileage - distance_traveled, 2)
+            print('At', given_time, 'truck2 has just dropped off package', t2staged[stop_number].pkg_id,
+                  'and is', distance_difference, 'miles into the next delivery.')
+            break
+
+    for pkg in dropped_off_pkgs:
+        pkg.status = "Delivered at"
+        # print('pkg', pkg.status)
+
+    # print('stop_number', truck2.route.index(truck2.route[stop_number]))
+    # print('distance traveled:', round(distance_traveled, 2))
+    # print('distance difference:', distance_difference)
+    # print('stop at ', stop_number, t2staged[stop_number])
+
 
 # RUN PROGRAM STUFF
 
@@ -407,7 +452,7 @@ if staged_pkgs[0][1] in truck2.manual_inventory_adjust:
 for item in unstaged_pkgs:
     determine_next_pkg()
 
-dispatch_trucks()
+# dispatch_trucks()
 
 # PRINTSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
 
@@ -452,5 +497,6 @@ dispatch_trucks()
 # print('t1distance', truck1.distance_traveled)
 
 # run_interface()
+# calc_time(2359)
 
-calc_time(2359)
+calc_status(900)
