@@ -212,6 +212,24 @@ def determine_first_pkg():
     return pkg_nearest_to_hub
 
 
+def determine_reup_first_pkg(truck):
+    min_dist_from_hub = 100
+    for dest in dist_table:
+        for unstaged_pkg in unstaged_pkgs:
+            if unstaged_pkg[1].address in dest[0]:
+                dist_to_hub = float(dest[2])
+                if dist_to_hub < min_dist_from_hub:
+                    min_dist_from_hub = dist_to_hub
+                    pkg_nearest_to_hub = unstaged_pkg
+    if pkg_nearest_to_hub[1] not in truck.inventory:
+        truck.inventory.append(pkg_nearest_to_hub[1])
+
+    truck.distance_traveled += min_dist_from_hub
+    truck.route.append(min_dist_from_hub)
+    unstaged_pkgs.remove(pkg_nearest_to_hub)
+    return pkg_nearest_to_hub
+
+
 # LOAD THE OTHER 31 PACKAGES. STILL LEAVES REMAINING PACKAGES TO BE LOADED.
 def determine_next_pkg():
     # DETERMINE NEAREST NEIGHBOR, APPEND, REMOVE.
@@ -402,26 +420,101 @@ def calc_status(given_time):
     minutes_driven = calc_time(given_time)
     working_mileage = minutes_driven * .3  # HOW FAR EACH TRUCK WILL HAVE DRIVEN BY THE given_time
 
-    # TRUCK2:
-    # ITEMS ON truck2 ORDERED BY STOP NUMBER
+    en_route = []
+
+    # ITEMS ON TRUCKS ORDERED BY STOP NUMBER
     t2staged = []
     for pkg in staged_pkgs:
         for item in truck2.inventory:
             if pkg[1] == item:
                 t2staged.append(item)
+    t1staged = []
+    for pkg in staged_pkgs:
+        for item in truck1.inventory:
+            if pkg[1] == item:
+                t1staged.append(item)
+
+    # TRUCK1:
+
+    t1dropped_off_pkgs = {}
+    distance_traveled1 = 0
+    stop_number1 = 0
+    for distance in truck1.route:  # Increments distance_traveled, determines and stores time in t1d{}, removes pkg from inv
+        if distance_traveled1 + distance <= working_mileage:  # Determines last stop by given time
+            distance_traveled1 += distance
+            time_of_delivery = round(current_time + distance_traveled1 / .3)
+            t1dropped_off_pkgs[t1staged[stop_number1].pkg_id] = correct_time(time_of_delivery)
+            if len(truck1.inventory) == 1:
+                last_pkg = truck1.inventory[0]
+            truck1.inventory.remove(t1staged[stop_number1])
+            stop_number1 += 1
+            if len(truck1.inventory) == 0:
+                if len(truck2.inventory) != 0:
+                    # RETURN TO HUB, LOAD UP, DISPATCH
+                    # DETERMINE DISTANCE FROM LAST PACKAGE TO HUB
+                    last_address = last_pkg.address
+                    miles_to_hub = determine_miles_to_hub(last_address)
+                    arrival_time_at_hub = return_to_hub(miles_to_hub, correct_time(time_of_delivery))
+                    # LOAD PACKAGES INTO TRUCK1 AND BEGIN
+                    determine_reup_first_pkg(truck1)
+                    for item in unstaged_pkgs:
+                        determine_next_pkg()
+                    for item in truck1.inventory:
+                        print('item', item)
+
+                    # PROVIDE TRUCK STATUS
+                    if int(arrival_time_at_hub) > given_time:
+                        print('t1 is on its way to hub')
+                    elif int(arrival_time_at_hub) == given_time:
+                        print('t1 has just arrived at hub')
+                    else:
+                        print('t1 gets to hub at', arrival_time_at_hub)
+                distance_difference = round(working_mileage - distance_traveled1, 2)
+                keys_list = list(t1dropped_off_pkgs.keys())
+                keys_except_last = keys_list[:-1]
+                keys_except_last_str = ', '.join(keys_except_last)
+                key_last = keys_list[-1]
+                print('At', given_time, 'truck1 has dropped off packages', keys_except_last_str, 'and',
+                      str(key_last) + '. No packages en route.')
+                break
+        else:  # Shows status
+            distance_difference = round(working_mileage - distance_traveled1, 2)
+            keys_list = list(t1dropped_off_pkgs.keys())
+            keys_except_last = keys_list[:-1]
+            keys_except_last_str = ', '.join(keys_except_last)
+            key_last = keys_list[-1]
+            for pkg in truck1.inventory:
+                en_route.append(str(pkg.pkg_id))
+            en_route_str = ', '.join(en_route)
+            print('At', given_time, 'truck1 has dropped off packages', keys_except_last_str, 'and', str(key_last),
+                  'and is', distance_difference, 'miles into the next delivery.')
+            print('Packages en route:', en_route_str)
+            break
+
+    # TRUCK2:
 
     t2dropped_off_pkgs = {}
-    distance_traveled = 0
-    stop_number = 0
+    distance_traveled2 = 0
+    stop_number2 = 0
     for distance in truck2.route:  # Increments distance_traveled, determines and stores time in t2d{}, removes pkg from inv
-        if distance_traveled + distance <= working_mileage:  # Determines last stop by given time
-            distance_traveled += distance
-            time_of_delivery = round(current_time + distance_traveled / .3)
-            t2dropped_off_pkgs[t2staged[stop_number].pkg_id] = correct_time(time_of_delivery)
-            truck2.inventory.remove(t2staged[stop_number])
-            stop_number += 1
+        if distance_traveled2 + distance <= working_mileage:  # Determines last stop by given time
+            distance_traveled2 += distance
+            time_of_delivery = round(current_time + distance_traveled2 / .3)
+            t2dropped_off_pkgs[t2staged[stop_number2].pkg_id] = correct_time(time_of_delivery)
+            if len(truck2.inventory) == 1:
+                last_pkg = truck2.inventory[0]
+            truck2.inventory.remove(t2staged[stop_number2])
+            stop_number2 += 1
             if len(truck2.inventory) == 0:
-                distance_difference = round(working_mileage - distance_traveled, 2)
+                if len(truck1.inventory) != 0:
+                    # RETURN TO HUB, LOAD UP, DISPATCH
+                    # DETERMINE DISTANCE FROM LAST PACKAGE TO HUB
+                    last_address = last_pkg.address
+                    miles_to_hub = determine_miles_to_hub(last_address)
+                    return_to_hub(miles_to_hub, correct_time(time_of_delivery))
+                    print('t2 get to hub, reload, dispatch')
+                    break
+                distance_difference = round(working_mileage - distance_traveled2, 2)
                 keys_list = list(t2dropped_off_pkgs.keys())
                 keys_except_last = keys_list[:-1]
                 keys_except_last_str = ', '.join(keys_except_last)
@@ -430,12 +523,11 @@ def calc_status(given_time):
                       '. No packages en route')
                 break
         else:  # Shows status
-            distance_difference = round(working_mileage - distance_traveled, 2)
+            distance_difference = round(working_mileage - distance_traveled2, 2)
             keys_list = list(t2dropped_off_pkgs.keys())
             keys_except_last = keys_list[:-1]
             keys_except_last_str = ', '.join(keys_except_last)
             key_last = keys_list[-1]
-            en_route = []
             for pkg in truck2.inventory:
                 en_route.append(str(pkg.pkg_id))
             en_route_str = ', '.join(en_route)
@@ -443,78 +535,18 @@ def calc_status(given_time):
                   'and is', distance_difference, 'miles into the next delivery.')
             print('Packages en route:', en_route_str)
             break
-    how_to_access_value = t2dropped_off_pkgs.get('14')
-
-    # TRUCK1:
-    # ITEMS ON truck1 ORDERED BY STOP NUMBER
-    t1staged = []
-    for pkg in staged_pkgs:
-        for item in truck1.inventory:
-            if pkg[1] == item:
-                t1staged.append(item)
-
-    t1dropped_off_pkgs = {}
-    distance_traveled = 0
-    stop_number = 0
-    for distance in truck1.route:  # Increments distance_traveled, determines and stores time in t1d{}, removes pkg from inv
-        if distance_traveled + distance <= working_mileage:  # Determines last stop by given time
-            distance_traveled += distance
-            time_of_delivery = round(current_time + distance_traveled / .3)
-            t1dropped_off_pkgs[t1staged[stop_number].pkg_id] = correct_time(time_of_delivery)
-            if len(truck1.inventory) == 1:
-                last_pkg = truck1.inventory[0]
-            truck1.inventory.remove(t1staged[stop_number])
-            stop_number += 1
-            if len(truck1.inventory) == 0:
-                if len(truck2.inventory) != 0:
-                    # RETURN TO HUB, LOAD UP, DISPATCH
-                    # DETERMINE DISTANCE FROM LAST PACKAGE TO HUB
-                    last_address = last_pkg.address
-                    return_to_hub(last_address)
-                    print('get to hub, reload, dispatch')
-                    break
-                distance_difference = round(working_mileage - distance_traveled, 2)
-                keys_list = list(t1dropped_off_pkgs.keys())
-                keys_except_last = keys_list[:-1]
-                keys_except_last_str = ', '.join(keys_except_last)
-                key_last = keys_list[-1]
-                en_route = []
-                for pkg in truck2.inventory:
-                    en_route.append(str(pkg.pkg_id))
-                en_route_str = ', '.join(en_route)
-                print('At', given_time, 'truck1 has dropped off packages', keys_except_last_str, 'and',
-                      str(key_last) + '. No packages en route.')
-                break
-        else:  # Shows status
-            distance_difference = round(working_mileage - distance_traveled, 2)
-            keys_list = list(t1dropped_off_pkgs.keys())
-            keys_except_last = keys_list[:-1]
-            keys_except_last_str = ', '.join(keys_except_last)
-            key_last = keys_list[-1]
-            en_route = []
-            for pkg in truck1.inventory:
-                en_route.append(str(pkg.pkg_id))
-            en_route_str = ', '.join(en_route)
-            print('At', given_time, 'truck1 has dropped off packages', keys_except_last_str, 'and', str(key_last),
-                  'and is', distance_difference, 'miles into the next delivery.')
-            print('Packages en route:', en_route_str)
-            break
-    how_to_access_value = t1dropped_off_pkgs.get('32')
-
-    # PRESENTS ALL PACKAGES NOT YET DELIVERED BY THE GIVEN TIME
-    # for bucket in myHash.table:
-    #     for pkg in bucket:
-    #
 
 
-def return_to_hub(last_address):
-    print('return:')
-    i = 0
+def determine_miles_to_hub(last_address):
     for row in dist_table:
-        if last_address in row[2]:
-            selected = dist_table[i]
-            print('what', selected)
+        if last_address in row[0]:
+            miles_from_hub = row[2]
+            return miles_from_hub
 
+
+def return_to_hub(miles_to_hub, time_of_delivery):
+    arrival_time_at_hub = round(float(time_of_delivery) + float(miles_to_hub) / .3)
+    return correct_time(arrival_time_at_hub)
 
 
 # RUN PROGRAM STUFF
