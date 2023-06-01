@@ -382,6 +382,18 @@ def calc_time(time):
         return total_minutes
 
 
+# ENSURES CORRECTNESS OF TIME AFTER ADDING MINUTES TRAVELED
+def add_time(time):
+    time = str(time)
+    time_list = list(time)
+    if int(time_list[-2]) > 5:
+        time_list[-3] = str((int(time[-3]) + 1))
+        time_list[-2] = str((int(time[-2]) - 6))
+        corrected_time = ''.join(time_list)
+        return corrected_time
+    else:
+        return time
+
 def calc_status(given_time):
 
     current_time = 800
@@ -396,19 +408,22 @@ def calc_status(given_time):
     working_mileage = minutes_driven * .3
     print('working_mileage:', working_mileage)
 
+    # SHOULD I LINK THEM?
+    pkg_and_time = {}
     dropped_off_pkgs = []
-
     distance_traveled = 0
     stop_number = 0
     for distance in truck2.route:
         if distance_traveled + distance <= working_mileage:
             distance_traveled += distance
-            delivery_time = distance_traveled
+            time_of_delivery = round(current_time + distance_traveled/.3)
+            corrected_time = add_time(time_of_delivery)
+            print('package:', t2staged[stop_number].pkg_id, corrected_time)
             stop_number += 1
         else:
             # return this
             for pkg in t2staged[:stop_number]:
-                dropped_off_pkgs.append(pkg)
+                dropped_off_pkgs.append(pkg)  # IS THIS RIGHT?
             distance_difference = round(working_mileage - distance_traveled, 2)
             print('At', given_time, 'truck2 has just dropped off package', t2staged[stop_number].pkg_id,
                   'and is', distance_difference, 'miles into the next delivery.')
@@ -499,4 +514,4 @@ for item in unstaged_pkgs:
 # run_interface()
 # calc_time(2359)
 
-calc_status(900)
+calc_status(1000)
