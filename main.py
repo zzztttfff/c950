@@ -498,6 +498,7 @@ def calc_status(given_time):
                                 last_pkg = truck1.inventory[0]
                             truck1.inventory.remove(t1staged[stop_num1])
                             stop_num1 += 1
+
                 # PROVIDE PACKAGE STATUS
                 # distance_difference = round(working_mileage - distance_traveled1, 2)
 
@@ -576,8 +577,8 @@ def calc_status(given_time):
     def extract_segment(string):
         return int(string[8:10])
     delivery_time_list.sort(key=extract_segment)
-    # for delivered_pkg in delivery_time_list:
-    #     print(delivered_pkg)
+    for delivered_pkg in delivery_time_list:
+        print(delivered_pkg)
 
 
 def determine_miles_to_hub(last_address):
