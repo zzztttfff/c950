@@ -494,16 +494,13 @@ def calc_status(given_time, request=None):
                             # for j in range(0, reup_stop_num + 1):
                             #     truck1.inventory.remove(t1staged[j][1])
 
-    for item in truck1.inventory:
-        print(item.pkg_id)
-        if item.pkg_id not in t1dropped_off_pkgs.keys():
-            print(item)
-            if item.pkg_id != 8:
-                t1dropped_off_pkgs[item.pkg_id] = t1dropped_off_pkgs['8']
-                print('here8')
-            elif item.pkg_id != 9:
-                t1dropped_off_pkgs[item.pkg-id] = t1dropped_off_pkgs['9']
-                print('here9')
+    if len(t1dropped_off_pkgs) > 16:
+        for item in truck1.inventory:
+            if item.pkg_id not in t1dropped_off_pkgs.keys():
+                if item.pkg_id != 8 and item.pkg_id == 9 or item.pkg_id == 30:
+                    t1dropped_off_pkgs[item.pkg_id] = t1dropped_off_pkgs['8']
+                elif item.pkg_id != 9 and item.pkg_id == 8 or item.pkg_id == 30:
+                    t1dropped_off_pkgs[item.pkg-id] = t1dropped_off_pkgs['9']
 
     # TRUCK2:
 
