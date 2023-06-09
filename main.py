@@ -224,12 +224,13 @@ def determine_next_pkg():
     for dest in dist_table[0]:
         for unstaged in unstaged_pkgs:
             if unstaged[1].address in dest:
-                inx = dist_table[0].index(dest)
-                if dist_table[current_pkg_inx - 1][inx] != '':
-                    # print(dist_table[current_pkg_inx - 1][inx], unstaged_pkg[1])
-                    if float(dist_table[current_pkg_inx - 1][inx]) < shortest_distance:
-                        shortest_distance = float(dist_table[current_pkg_inx - 1][inx])
-                        nearest_neighbor = unstaged
+                if unstaged[1].pkg_id != '9':
+                    inx = dist_table[0].index(dest)
+                    if dist_table[current_pkg_inx - 1][inx] != '':
+                        # print(dist_table[current_pkg_inx - 1][inx], unstaged_pkg[1])
+                        if float(dist_table[current_pkg_inx - 1][inx]) <= shortest_distance:
+                            shortest_distance = float(dist_table[current_pkg_inx - 1][inx])
+                            nearest_neighbor = unstaged
 
     # DETERMINE nearest_neighbor AND shortest_distance TO current_pkg:
     for dest in dist_table[0]:
@@ -239,9 +240,10 @@ def determine_next_pkg():
                 if row[inx] != '':
                     for unstaged in unstaged_pkgs:
                         if unstaged[1].address in row[0]:
-                            if float(row[inx]) < shortest_distance:
-                                shortest_distance = float(row[inx])
-                                nearest_neighbor = unstaged
+                            if unstaged[1].pkg_id != '9':
+                                if float(row[inx]) <= shortest_distance:
+                                    shortest_distance = float(row[inx])
+                                    nearest_neighbor = unstaged
 
     # ADD PACKAGES FROM manual_inventory
     if nearest_neighbor[1] in truck2.manual_inventory_adjust:
@@ -419,9 +421,12 @@ def calc_status(given_time, request=None):
                 min_dist_from_hub = 100
                 for dest in dist_table:
                     for unstaged_pkg in unstaged_pkgs:
+                        if unstaged_pkg[1].pkg_id == '9':
+                            unstaged_pkg[1].address = '410 S State St'
+                            print('pkg', unstaged_pkg[1])
                         if unstaged_pkg[1].address in dest[0]:
                             dist_to_hub = float(dest[2])
-                            if dist_to_hub < min_dist_from_hub:
+                            if dist_to_hub <= min_dist_from_hub:
                                 min_dist_from_hub = dist_to_hub
                                 pkg_nearest_to_hub = unstaged_pkg
                 if pkg_nearest_to_hub[1] not in truck1.inventory:
@@ -436,8 +441,12 @@ def calc_status(given_time, request=None):
             copy_of_unstaged_pkgs = unstaged_pkgs.copy()
             reup_stop_num = 0
             for i in copy_of_unstaged_pkgs:
-                if staged_pkgs[-1][1].pkg_id != '9':
-                    current_pkg = staged_pkgs[-1]
+                current_pkg = staged_pkgs[-1]
+                # if current_pkg[1].pkg_id == '9':
+                #     # current_pkg[1].address = '420 S State St.'
+                #     print(current_pkg[1].address)
+
+
 
                 # GRABS current_pkg dist_table[0] COLUMN INDEX:
                 current_pkg_inx = int
@@ -492,13 +501,13 @@ def calc_status(given_time, request=None):
                             # for j in range(0, reup_stop_num + 1):
                             #     truck1.inventory.remove(t1staged[j][1])
 
-    if len(t1dropped_off_pkgs) > 16:
-        for item in truck1.inventory:
-            if item.pkg_id not in t1dropped_off_pkgs.keys():
-                if item.pkg_id != 8 and item.pkg_id == 9 or item.pkg_id == 30:
-                    t1dropped_off_pkgs[item.pkg_id] = t1dropped_off_pkgs['8']
-                elif item.pkg_id != 9 and item.pkg_id == 8 or item.pkg_id == 30:
-                    t1dropped_off_pkgs[item.pkg-id] = t1dropped_off_pkgs['9']
+    # if len(t1dropped_off_pkgs) > 16:
+    #     for item in truck1.inventory:
+    #         if item.pkg_id not in t1dropped_off_pkgs.keys():
+    #             if item.pkg_id != '8' and item.pkg_id == '9' or item.pkg_id == '30':
+    #                 t1dropped_off_pkgs[item.pkg_id] = t1dropped_off_pkgs['8']
+    #             elif item.pkg_id != '9' and item.pkg_id == '8' or item.pkg_id == '30':
+    #                 t1dropped_off_pkgs[item.pkg_id] = t1dropped_off_pkgs['9']
 
     # TRUCK2:
 
@@ -510,7 +519,10 @@ def calc_status(given_time, request=None):
             truck2.distance_traveled += distance
             time_of_delivery = round(current_time + truck2.distance_traveled / .3)
             t2dropped_off_pkgs[t2staged[stop_number2].pkg_id] = correct_time(time_of_delivery)
-            nearest_neighbor[1].status = f"Delivered at {time_of_delivery}"
+            # print('near', nearest_neighbor)
+            if nearest_neighbor[1]:
+                nearest_neighbor[1].status = f"Delivered at {time_of_delivery}"
+                # print(nearest_neighbor)
             if len(truck2.inventory) == 1:
                 last_pkg = truck2.inventory[0]
             truck2.inventory.remove(t2staged[stop_number2])
