@@ -126,6 +126,7 @@ class Truck:
         self.last_pkg = Package
 
     distance_traveled = 0
+    reup_distance_traveled = 0
 
     def load_special(self):
         # self.inventory.append(pkg_id)
@@ -393,11 +394,9 @@ def calc_status(given_time, request=None):
             # else:  # PACKAGE DELIVERY STATUS
                 # distance_difference = round(working_mileage - distance_traveled1, 2)
 
-
     # TRUCK1:
     # REUP:
     if len(truck1.inventory) == 0 and len(unstaged_pkgs) > 0:
-        print('LEN T1.INV = 0')
 
         # FIND MILES TRAVELED BY ARRIVAL AT HUB
         miles_to_hub = determine_miles_to_hub(truck1.last_pkg.address)
@@ -406,6 +405,7 @@ def calc_status(given_time, request=None):
         raw_time_difference = (int(arrival_time_at_hub) - current_time)
         correct_minutes_difference = convert_to_minutes(raw_time_difference)
         miles_traveled_by_arrival_at_hub = correct_minutes_difference * .3
+        current_time = 1020
 
         # LOAD PACKAGES INTO TRUCK1 AND BEGIN
 
@@ -426,7 +426,7 @@ def calc_status(given_time, request=None):
                                 pkg_nearest_to_hub = unstaged_pkg
                 if pkg_nearest_to_hub[1] not in truck1.inventory:
                     truck1.inventory.append(pkg_nearest_to_hub[1])
-                truck1.distance_traveled += min_dist_from_hub
+                truck1.reup_distance_traveled += min_dist_from_hub
                 truck1.route.append(min_dist_from_hub)
                 staged_pkgs.append(pkg_nearest_to_hub)
                 t1staged.append(pkg_nearest_to_hub)
@@ -436,8 +436,8 @@ def calc_status(given_time, request=None):
             copy_of_unstaged_pkgs = unstaged_pkgs.copy()
             reup_stop_num = 0
             for i in copy_of_unstaged_pkgs:
-
-                current_pkg = staged_pkgs[-1]
+                if staged_pkgs[-1][1].pkg_id != '9':
+                    current_pkg = staged_pkgs[-1]
 
                 # GRABS current_pkg dist_table[0] COLUMN INDEX:
                 current_pkg_inx = int
@@ -471,22 +471,20 @@ def calc_status(given_time, request=None):
                 # print('t1', truck1.distance_traveled)
                 # print('s', shortest_distance)
                 # print('w', working_mileage)
-                if truck1.distance_traveled + shortest_distance <= working_mileage:
+                if truck1.reup_distance_traveled + shortest_distance <= working_mileage:
                     if len(truck1.inventory) < 16:
                         if nearest_neighbor[1] not in truck1.inventory:
-                            # print('NEAR', nearest_neighbor)
                             unstaged_pkgs.remove(nearest_neighbor)
                             truck1.inventory.append(nearest_neighbor[1])
-                            truck1.distance_traveled += shortest_distance
+                            truck1.reup_distance_traveled += shortest_distance
                             truck1.route.append(shortest_distance)
-                            staged_pkgs.append(nearest_neighbor)  # I MOVED THIS OUT OF THE TWO IF LOOPS. IF ERROR, MOVE RIGHT 2 TABS
+                            staged_pkgs.append(nearest_neighbor)
                             t1staged.append(nearest_neighbor)
-                            time_of_delivery = round(current_time + truck1.distance_traveled / .3)
+                            raw_time_of_delivery = round(current_time + truck1.reup_distance_traveled / .3)
+                            time_of_delivery = correct_time(raw_time_of_delivery)
                             t1dropped_off_pkgs[t1staged[reup_stop_num][1].pkg_id] = correct_time(time_of_delivery)
-                            # if len(truck1.inventory) == 1:
-                            #     truck1.last_pkg = truck1.inventory[0]
-                            #     print('last', truck1.last_pkg)
-                            # truck1.inventory.remove(t1staged[reup_stop_num][1])
+                            nearest_neighbor[1].status = f"Delivered at {time_of_delivery}"
+
                             reup_stop_num += 1
                         # if len(unstaged_pkgs) <= 1:
                             # for item in unstaged_pkgs:
@@ -512,6 +510,7 @@ def calc_status(given_time, request=None):
             truck2.distance_traveled += distance
             time_of_delivery = round(current_time + truck2.distance_traveled / .3)
             t2dropped_off_pkgs[t2staged[stop_number2].pkg_id] = correct_time(time_of_delivery)
+            nearest_neighbor[1].status = f"Delivered at {time_of_delivery}"
             if len(truck2.inventory) == 1:
                 last_pkg = truck2.inventory[0]
             truck2.inventory.remove(t2staged[stop_number2])
