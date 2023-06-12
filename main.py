@@ -146,21 +146,6 @@ class Truck:
                                 truck2.manual_inventory.append(data)
                                 truck2.manual_inventory_adjust.append(data)
 
-    def load(self, pkg_to_load):
-        if len(self.inventory) > 16:
-            return 'Too many packages in truck.'
-
-        # ADD TO TRUCK INVENTORY
-        self.inventory.append(pkg_to_load)
-
-        # REMOVE FROM HUB
-        for bucket in myHash.table:
-            for pkg in bucket:
-                if pkg[0] == pkg_to_load.pkg_id:
-                    # print('load() pkg[0]: ', pkg[0])
-                    return
-        return
-
     def __repr_id__(self):
         return f"Packages: {self.inventory[0].pkg_id}, " + ", ".join(
             [f"{x.pkg_id}" for x in self.inventory[1:len(self.inventory) - 1]]) + " ".join(
@@ -601,11 +586,14 @@ def calc_status(given_time, request=None):
         print(f"PACKAGES DELIVERED BY TRUCK1 BY {given_time}:")
         for (pkg_id, time) in zip(delivered_pkgs, delivered_times):
             print(f"Package {pkg_id} delivered at {time}.")
-
         print(f"\nPACKAGES DELIVERED BY TRUCK2 BY {given_time}:")
         for (pkg_id, time) in zip(delivered_pkgs2, delivered_times2):
             print(f"Package {pkg_id} delivered at {time}.")
         print()
+        if len(delivered_pkgs) == 24 and len(delivered_pkgs2) == 16:
+            print('ALL PACKAGES DELIVERED')
+        print()
+
         print(f"By {given_time}, Truck1 travels {round(truck1.distance_traveled + truck1.reup_distance_traveled)} miles")
         print(f"By {given_time}, Truck2 travels {round(truck2.distance_traveled)} miles")
         print()
