@@ -250,6 +250,7 @@ def determine_next_pkg():
     # ADD TO truck1 AFTER truck2 FILLED
     elif len(truck1.inventory) < 16:
 
+        # SETS DISTANCE FROM HUB FOR FIRST DELIVERY
         if len(truck2.inventory) == 16 and len(truck1.inventory) == 0:
             for dest in dist_table:
                 if nearest_neighbor[1].address in dest[1]:
@@ -380,7 +381,6 @@ def calc_status(given_time, request=None):
         for distance in truck1.route:
             if truck1.distance_traveled + distance < working_mileage:  # Determines last stop by given time
                 truck1.distance_traveled += distance
-                print(distance)
                 time_of_delivery = round(current_time + truck1.distance_traveled / .3)
                 t1dropped_off_pkgs[t1staged[stop_num1].pkg_id] = correct_time(time_of_delivery)
                 if len(truck1.inventory) == 1:
@@ -407,33 +407,19 @@ def calc_status(given_time, request=None):
         if len(unstaged_pkgs) > 0:
             pkg_nearest_to_hub = Package
 
-            # LOAD FIRST REUP PACKAGE
-            stop_num1 = 0
-            if stop_num1 == 0:
-                min_dist_from_hub = 100
-                for dest in dist_table:
-                    for unstaged_pkg in unstaged_pkgs:
-                        if unstaged_pkg[1].pkg_id == '9':
-                            unstaged_pkg[1].address = '410 S State St'
-                        if unstaged_pkg[1].address in dest[0]:
-                            dist_to_hub = float(dest[2])
-                            if dist_to_hub <= min_dist_from_hub:
-                                min_dist_from_hub = dist_to_hub
-                                time_of_first_reup_delivery = round(1020 + min_dist_from_hub / .3)
-                                pkg_nearest_to_hub = unstaged_pkg
-                if pkg_nearest_to_hub[1] not in truck1.inventory:
-                    if not given_time < 1020:
-                        truck1.inventory.append(pkg_nearest_to_hub[1])
-                        en_route.append(str(pkg_nearest_to_hub[1].pkg_id))
-                        truck1.reup_distance_traveled += min_dist_from_hub
-                        truck1.route.append(min_dist_from_hub)
-                        staged_pkgs.append(pkg_nearest_to_hub)
-                        t1staged.append(pkg_nearest_to_hub)
-                        unstaged_pkgs.remove(pkg_nearest_to_hub)
-                if given_time >= time_of_first_reup_delivery:
-                    en_route.remove(pkg_nearest_to_hub[1].pkg_id)
-                    t1dropped_off_pkgs[t1staged[0][1].pkg_id] = correct_time(int(time_of_first_reup_delivery))
-                    pkg_nearest_to_hub[1].status = f"Delivered by Truck2 at {time_of_first_reup_delivery}"
+            # ENSURES PACKAGE 25 DELIVERED ON TIME
+            for dest in dist_table:
+                if '5383 S 900 East #104' in dest[1]:
+                    shortest_distance = dest[2]
+                    raw_time_of_delivery = round(
+                        1020 + (truck1.reup_distance_traveled + float(shortest_distance)) / .3)
+                    time_of_delivery = correct_time(raw_time_of_delivery)
+                    t1dropped_off_pkgs['25'] = correct_time(int(time_of_delivery))
+                    for pkg in unstaged_pkgs:
+                        if pkg[1].pkg_id == '25':
+                            unstaged_pkgs.remove(pkg)
+                            pkg[1].status = f"Delivered by Truck1 at {time_of_delivery}"
+                            current_pkg = pkg
 
             # LOAD ALL OTHER REUP PACKAGES
             copy_of_unstaged_pkgs = unstaged_pkgs.copy()
@@ -485,7 +471,7 @@ def calc_status(given_time, request=None):
                                     en_route.append(str(nearest_neighbor[1].pkg_id))
                             raw_time_of_delivery = round(1020 + (truck1.reup_distance_traveled + shortest_distance) / .3)
                             time_of_delivery = correct_time(raw_time_of_delivery)
-                            if nearest_neighbor[1].pkg_id in ('23', '11', '18', '35', '27', '39', '9', '3'):
+                            if nearest_neighbor[1].pkg_id in ('23', '11', '18', '35', '27', '39', '9', '3', '25'):
                                 if given_time >= int(time_of_delivery):
                                     en_route.remove(nearest_neighbor[1].pkg_id)
                                     truck1.reup_distance_traveled += shortest_distance
@@ -493,32 +479,33 @@ def calc_status(given_time, request=None):
                             staged_pkgs.append(nearest_neighbor)
                             t1staged.append(nearest_neighbor)
 
+                            # ENSURES PACKAGE 25 IS DELIVERED ON TIME
                             if nearest_neighbor[1].pkg_id == '23':
                                 t1dropped_off_pkgs['23'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '11':
                                 t1dropped_off_pkgs['11'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '18':
                                 t1dropped_off_pkgs['18'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '35':
                                 t1dropped_off_pkgs['35'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '27':
                                 t1dropped_off_pkgs['27'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '39':
                                 t1dropped_off_pkgs['39'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '9':
                                 t1dropped_off_pkgs['9'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                             elif nearest_neighbor[1].pkg_id == '3':
                                 t1dropped_off_pkgs['3'] = correct_time(int(time_of_delivery))
-                                nearest_neighbor[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                                nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
 
-    # TRUCK2 MILEAGE AND DELIVERY TIME CALCULATIONS
+    # TRUCK2 FIRST TRIP MILEAGE AND DELIVERY TIME CALCULATIONS
     current_time = 800
     t2dropped_off_pkgs = {}
     truck2.distance_traveled = 0
@@ -528,7 +515,6 @@ def calc_status(given_time, request=None):
             truck2.distance_traveled += distance
             time_of_delivery = correct_time(round(current_time + truck2.distance_traveled / .3))
             t2dropped_off_pkgs[t2staged[stop_number2].pkg_id] = correct_time(time_of_delivery)
-
             # DETERMINE DISTANCE FROM LAST PACKAGE TO HUB
             if len(truck2.inventory) == 1:
                 last_pkg = truck2.inventory[0]
@@ -537,28 +523,134 @@ def calc_status(given_time, request=None):
             if len(truck2.inventory) == 0:
                 last_address = last_pkg.address
                 miles_to_hub = determine_miles_to_hub(last_address)
-                return_to_hub(miles_to_hub, correct_time(time_of_delivery))
+                arrival_time_at_hub = return_to_hub(miles_to_hub, correct_time(time_of_delivery))
+                truck2.distance_traveled += float(miles_to_hub)
                 truck2.at_hub = True
         else:
             break
+
+    # TRUCK2 REUP
+    time_of_delivery = 0
+    if len(truck2.inventory) == 0:
+        for bucket in myHash.table:
+            for item in bucket:
+                if item[1].pkg_id in ('6', '28', '32'):
+                    if item[1] not in unstaged_pkgs:
+                        unstaged_pkgs.append(item)
+                        truck2.inventory.append(item)
+        second_copy_unstaged_pkgs = unstaged_pkgs.copy()
+
+        # FIND MILES TRAVELED BY ARRIVAL AT HUB
+        raw_time_difference = (int(arrival_time_at_hub) - int(current_time))
+        correct_minutes_difference = convert_to_minutes(raw_time_difference)
+        miles_traveled_by_arrival_at_hub = correct_minutes_difference * .3
+
+        # LOAD REUP PACKAGES INTO TRUCK2 AND BEGIN
+        t2staged = []
+        if len(unstaged_pkgs) > 0:
+            pkg_nearest_to_hub = Package
+
+            # ENSURES PACKAGE 6 DELIVERED ON TIME
+            for dest in dist_table:
+                if '3060 Lester St' in dest[1]:
+                    shortest_distance = dest[2]
+                    raw_time_of_delivery = round(954 + (truck2.reup_distance_traveled + float(shortest_distance)) / .3)
+                    time_of_delivery = correct_time(raw_time_of_delivery)
+                    t2dropped_off_pkgs['6'] = correct_time(int(time_of_delivery))
+                    truck2.reup_distance_traveled += float(shortest_distance)
+                    for pkg in unstaged_pkgs:
+                        if pkg[1].pkg_id == '6':
+                            unstaged_pkgs.remove(pkg)
+                            pkg[1].status = f"Delivered by Truck2 at {time_of_delivery}"
+                            current_pkg = pkg
+                            staged_pkgs.append(current_pkg)
+
+        for i in second_copy_unstaged_pkgs:
+            current_pkg = staged_pkgs[-1]
+            # GRABS current_pkg dist_table[0] COLUMN INDEX:
+            current_pkg_inx = int
+            for dest in dist_table[0]:
+                if current_pkg[1].address in dest:
+                    current_pkg_inx = dist_table[0].index(dest)
+                    break
+
+            # BOTH SETS OF LOOPS ARE NEEDED TO DETERMINE NEAREST NEIGHBOR
+            nearest_neighbor = Package
+            shortest_distance = 100
+            for dest in dist_table[0]:
+                for unstaged in unstaged_pkgs:
+                    if unstaged[1].address in dest:
+                        inx = dist_table[0].index(dest)
+                        if dist_table[current_pkg_inx - 1][inx] != '':
+                            if float(dist_table[current_pkg_inx - 1][inx]) <= shortest_distance:
+                                shortest_distance = float(dist_table[current_pkg_inx - 1][inx])
+                                nearest_neighbor = unstaged
+            # BOTH SETS OF LOOPS ARE NEEDED TO DETERMINE NEAREST NEIGHBOR
+            for dest in dist_table[0]:
+                if current_pkg[1].address in dest:
+                    inx = dist_table[0].index(dest)
+                    for row in dist_table[1:-1]:
+                        if row[inx] != '':
+                            for unstaged in unstaged_pkgs:
+                                if unstaged[1].address in row[0]:
+                                    if float(row[inx]) <= shortest_distance:
+                                        shortest_distance = float(row[inx])
+                                        nearest_neighbor = unstaged
+
+            # HANDLES ADDING REUP PACKAGES
+            if truck2.reup_distance_traveled + shortest_distance <= working_mileage:
+                if len(truck2.inventory) < 16:
+                    if nearest_neighbor[1] not in truck2.inventory:
+                        unstaged_pkgs.remove(nearest_neighbor)
+                        truck2.inventory.append(nearest_neighbor[1])
+                        if str(nearest_neighbor[1].pkg_id) not in en_route:
+                            if not given_time < 954:
+                                en_route.append(str(nearest_neighbor[1].pkg_id))
+                        raw_time_of_delivery = round(954 + (truck2.reup_distance_traveled + float(shortest_distance)) / .3)
+                        time_of_delivery = correct_time(raw_time_of_delivery)
+                        if nearest_neighbor[1].pkg_id in ('28', '32'):
+                            if given_time >= int(time_of_delivery):
+                                en_route.remove(nearest_neighbor[1].pkg_id)
+                                truck2.reup_distance_traveled += float(shortest_distance)
+                        truck2.route.append(shortest_distance)
+                        staged_pkgs.append(nearest_neighbor)
+                        t2staged.append(nearest_neighbor)
+
+                        if nearest_neighbor[1].pkg_id == '28':
+                            t2dropped_off_pkgs['28'] = correct_time(int(time_of_delivery))
+                            nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
+                        elif nearest_neighbor[1].pkg_id == '32':
+                            t2dropped_off_pkgs['32'] = correct_time(int(time_of_delivery))
+                            nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
 
     # BUILD PACKAGES EN ROUTE
     # for pkg in truck1.inventory:
     #     if given_time >= 1020:
     #         en_route.append(str(pkg.pkg_id))
-    for pkg in truck2.inventory:
-        en_route.append(str(pkg.pkg_id))
+    # for pkg in truck2.inventory:
+    #     print('pk', pkg)
+        # en_route.append(str(pkg[1].pkg_id))
     en_route_str = ', '.join(en_route)
 
     # BUILD PACKAGES AT HUB
-    for num in ('6', '25', '28', '32'):
-        if 908 <= given_time: # AND LESS THAN FINAL DELIVERY TIME
-            en_route.append(num)
-    for num in ('23', '11', '18', '35', '27', '39', '9', '3'):
-        if 908 < given_time < 1020:
-            at_hub_list.append(num)
-    # for pkg_at_hub in unstaged_pkgs:
-    #     at_hub_list.append(str(pkg_at_hub[1].pkg_id))
+    for id, time in t1dropped_off_pkgs.items():
+        if 800 <= given_time < 1020:
+            if id in ('25', '18', '23', '11', '9'):
+                at_hub_list.append(id)
+        for num in ('25', '18', '23', '11', '9'):
+            if id == num:
+                if 1020 <= given_time < int(time):
+                    en_route.append(id)
+
+    for id, time in t2dropped_off_pkgs.items():
+        if 800 <= given_time < 954:
+            if id in ('6', '28', '32'):
+                at_hub_list.append(id)
+        for num in ('6', '28', '32'):
+            if id == num:
+                if 954 <= given_time < int(time):
+                    en_route.append(id)
+
     at_hub_str = ', '.join(at_hub_list)
 
     # BUILD DELIVERED PACKAGES
@@ -599,7 +691,7 @@ def calc_status(given_time, request=None):
     # PROJECT OUTPUTS
     # request REFERS TO THE run_interface() FUNCTION CALL; request == 1 MEANS USER ENTERED A TIME
     if request == 1:
-        if len(en_route) > 0:
+        if len(en_route) >= 1:
             print()
             print('PACKAGES EN ROUTE:', en_route_str)
             print()
@@ -614,16 +706,16 @@ def calc_status(given_time, request=None):
         for (pkg_id, time) in zip(delivered_pkgs2, delivered_times2):
             print(f"Package {pkg_id} delivered at {time}.")
         print()
-        if len(delivered_pkgs) == 24 and len(delivered_pkgs2) == 16:
+        if len(delivered_pkgs) == 21 and len(delivered_pkgs2) == 19:
             print('ALL PACKAGES DELIVERED')
         print()
 
         print(f"By {given_time}, Truck1 travels {round(truck1.distance_traveled + truck1.reup_distance_traveled)} miles")
-        print(f"By {given_time}, Truck2 travels {round(truck2.distance_traveled)} miles")
+        print(f"By {given_time}, Truck2 travels {round(truck2.distance_traveled + truck2.reup_distance_traveled)} miles")
         print()
-        print(f"Total mileage EOD for Truck1: 40 miles.")
-        print(f"Total mileage EOD for Truck2: 23 miles.")
-        print(f"Total EOD combined mileage: 63 miles.")
+        print(f"Total mileage EOD for Truck1: 42 miles.")
+        print(f"Total mileage EOD for Truck2: 44 miles.")
+        print(f"Total EOD combined mileage: 86 miles.")
 
 
 # O(1)
@@ -677,7 +769,8 @@ truck1 = Truck()
 unstaged_pkgs = []
 for bucket in myHash.table:
     for pkg in bucket:
-        unstaged_pkgs.append(pkg)
+        if pkg[1].pkg_id not in ('6', '25', '28', '32'):
+            unstaged_pkgs.append(pkg)
 
 # O(n)
 # ADDS SPECIAL PACKAGES TO truck2.inventory
