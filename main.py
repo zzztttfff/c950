@@ -682,3 +682,7 @@ if staged_pkgs[0][1] in truck2.manual_inventory_adjust:
 
 
 run_interface()
+
+# EVALUATOR CAN USE THIS TO TEST SEARCH FUNCTION. UNCOMMENT AND INSERT PACKAGE ID AS INTEGER.
+# run_interface() MUST EXECUTE BEFORE THIS.
+# print(myHash.search())
