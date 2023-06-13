@@ -3,6 +3,7 @@ import csv
 import math
 
 
+# O(n)
 def load_package_file(file):
     with open(file) as pkg_csv:
         reader = csv.reader(pkg_csv, delimiter=',')
@@ -36,6 +37,7 @@ def load_package_file(file):
                     myHash.insert_auto(pkg_id, package)
 
 
+# O(n)
 def load_dist_file(file):
     with open(file) as dist_csv:
         reader = csv.reader(dist_csv, delimiter=',')
@@ -60,6 +62,7 @@ class HashTable:
         for i in range(capacity):
             self.table.append([])
 
+    # O(n)
     def insert_auto(self, key, item):
         bucket = hash(key) % len(self.table)
         bucket_list = self.table[bucket]
@@ -157,7 +160,7 @@ class Truck:
             [f"ID {self.inventory[len(self.inventory) - 1].pkg_id}: {self.inventory[len(self.inventory) - 1].address}"])
 
 
-# LOAD PKG CLOSEST TO HUB
+# O(n)
 def determine_first_pkg():
     min_dist_from_hub = 100
     for dest in dist_table:
@@ -178,7 +181,7 @@ def determine_first_pkg():
     return pkg_nearest_to_hub
 
 
-# THIS LOADS THE OTHER 31 PACKAGES. STILL LEAVES REMAINING PACKAGES TO BE LOADED:
+# O(n)
 def determine_next_pkg():
 
     current_pkg = staged_pkgs[-1]
@@ -270,6 +273,7 @@ def determine_next_pkg():
                     determine_next_pkg()
 
 
+# O(1)
 def calc_time(time):
     if time < 1000:
         if time < 800:
@@ -299,6 +303,7 @@ def calc_time(time):
         return total_minutes
 
 
+# 0(1)
 # ENSURES CORRECTNESS OF TIME AFTER ADDING MINUTES TRAVELED
 def correct_time(time):
     time = str(time)
@@ -312,12 +317,14 @@ def correct_time(time):
         return time
 
 
+# O(1)
 def convert_to_minutes(wrong_minutes):
     multiple60 = math.floor(wrong_minutes / 60) * 60
     mod = wrong_minutes % 60
     return round(multiple60 + mod - 40 * multiple60 / 60)
 
 
+# O(n)
 # RETURNS PACKAGE STATUS GIVEN A USER-INPUT TIME
 def calc_status(given_time, request=None):
 
@@ -602,6 +609,7 @@ def calc_status(given_time, request=None):
         print(f"Total EOD combined mileage: 63 miles.")
 
 
+# O(1)
 def determine_miles_to_hub(last_address):
     for row in dist_table:
         if last_address in row[0]:
@@ -609,11 +617,13 @@ def determine_miles_to_hub(last_address):
             return miles_from_hub
 
 
+# O(1)
 def return_to_hub(miles_to_hub, time_of_delivery):
     arrival_time_at_hub = round(float(time_of_delivery) + float(miles_to_hub) / .3)
     return correct_time(arrival_time_at_hub)
 
 
+# O(n)
 def run_interface():
     choice = input("Enter 1 to search by package number. \nEnter 2 to search by time.\n")
 
@@ -632,7 +642,7 @@ def run_interface():
         calc_status(int(time), 1)
 
 
-# RUN PROGRAM STUFF
+# EVERYTHING BELOW HERE STARTS THE PROGRAM
 
 
 myHash = HashTable()
@@ -642,18 +652,23 @@ dist_table = load_dist_file(r"C:\Users\zacha\Downloads\WGUPS_Distance_Table.csv"
 truck2 = Truck()
 truck1 = Truck()
 
+# O(n)
 # STARTS AS ALL PACKAGES; PACKAGES GET REMOVED AS THEY ARE STAGED
 unstaged_pkgs = []
 for bucket in myHash.table:
     for pkg in bucket:
         unstaged_pkgs.append(pkg)
 
+# O(n)
 # ADDS SPECIAL PACKAGES TO truck2.inventory
 truck2.load_special()
 
+
+# O(n)
 # CREATE staged_pkgs, DETERMINE FIRST PACKAGE IN ROUTE, ADD IT TO staged_pkgs, REMOVE IT FROM unstaged_pkgs, REMOVE FROM truck2.manual_inventory_adjust
 staged_pkgs = [determine_first_pkg()]
 if staged_pkgs[0][1] in truck2.manual_inventory_adjust:
     truck2.manual_inventory_adjust.remove(staged_pkgs[0][1])
+
 
 run_interface()
