@@ -249,6 +249,12 @@ def determine_next_pkg():
 
     # ADD TO truck1 AFTER truck2 FILLED
     elif len(truck1.inventory) < 16:
+
+        if len(truck2.inventory) == 16 and len(truck1.inventory) == 0:
+            for dest in dist_table:
+                if nearest_neighbor[1].address in dest[1]:
+                    shortest_distance = float(dest[2])
+
         if truck1.at_hub:
             if nearest_neighbor[1] not in truck1.inventory:
                 if nearest_neighbor[1] not in truck2.inventory:
@@ -374,6 +380,7 @@ def calc_status(given_time, request=None):
         for distance in truck1.route:
             if truck1.distance_traveled + distance < working_mileage:  # Determines last stop by given time
                 truck1.distance_traveled += distance
+                print(distance)
                 time_of_delivery = round(current_time + truck1.distance_traveled / .3)
                 t1dropped_off_pkgs[t1staged[stop_num1].pkg_id] = correct_time(time_of_delivery)
                 if len(truck1.inventory) == 1:
@@ -544,8 +551,11 @@ def calc_status(given_time, request=None):
     en_route_str = ', '.join(en_route)
 
     # BUILD PACKAGES AT HUB
+    for num in ('6', '25', '28', '32'):
+        if 908 <= given_time: # AND LESS THAN FINAL DELIVERY TIME
+            en_route.append(num)
     for num in ('23', '11', '18', '35', '27', '39', '9', '3'):
-        if given_time < 1020:
+        if 908 < given_time < 1020:
             at_hub_list.append(num)
     # for pkg_at_hub in unstaged_pkgs:
     #     at_hub_list.append(str(pkg_at_hub[1].pkg_id))
