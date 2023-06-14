@@ -373,6 +373,7 @@ def calc_status(given_time, request=None):
 
     # TRUCK1:
     # FIRST 16 PACKAGES:
+    # O(n)
     t1dropped_off_pkgs = {}
     truck1.distance_traveled = 0
 
@@ -408,6 +409,7 @@ def calc_status(given_time, request=None):
         if len(unstaged_pkgs) > 0:
             pkg_nearest_to_hub = Package
 
+            # O(1)
             # ENSURES PACKAGE 25 DELIVERED ON TIME
             for dest in dist_table:
                 if '5383 S 900 East #104' in dest[1]:
@@ -427,6 +429,7 @@ def calc_status(given_time, request=None):
                                 current_pkg = pkg
                                 break
 
+            # O(n)
             # LOAD ALL OTHER REUP PACKAGES
             pkg_count = 0
             copy_of_unstaged_pkgs = unstaged_pkgs.copy()
@@ -445,6 +448,7 @@ def calc_status(given_time, request=None):
                 if current_pkg[1].pkg_id == '9':
                     current_pkg_inx = 21
 
+                # O(n)
                 # BOTH SETS OF LOOPS ARE NEEDED TO DETERMINE NEAREST NEIGHBOR
                 nearest_neighbor = Package
                 shortest_distance = 100
@@ -468,6 +472,7 @@ def calc_status(given_time, request=None):
                                             shortest_distance = float(row[inx])
                                             nearest_neighbor = unstaged
 
+                # O(n)
                 # HANDLES ADDING REUP PACKAGES
                 if truck1.reup_distance_traveled + shortest_distance <= working_mileage:
                     if len(truck1.inventory) < 16:
@@ -513,6 +518,7 @@ def calc_status(given_time, request=None):
                                 t1dropped_off_pkgs['3'] = correct_time(int(time_of_delivery))
                                 nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
 
+    # O(1)
     # TRUCK2 FIRST TRIP MILEAGE AND DELIVERY TIME CALCULATIONS
     current_time = 800
     t2dropped_off_pkgs = {}
@@ -538,6 +544,7 @@ def calc_status(given_time, request=None):
         else:
             break
 
+    # O(n)
     # TRUCK2 REUP
     time_of_delivery = 0
     if len(truck2.inventory) == 0:
@@ -584,6 +591,7 @@ def calc_status(given_time, request=None):
                     current_pkg_inx = dist_table[0].index(dest)
                     break
 
+            # O(n)
             # BOTH SETS OF LOOPS ARE NEEDED TO DETERMINE NEAREST NEIGHBOR
             nearest_neighbor = Package
             shortest_distance = 100
@@ -607,6 +615,7 @@ def calc_status(given_time, request=None):
                                         shortest_distance = float(row[inx])
                                         nearest_neighbor = unstaged
 
+            # O(n)
             # HANDLES ADDING REUP PACKAGES
             # for item in truck2.inventory:
             #     print(item)
@@ -638,6 +647,7 @@ def calc_status(given_time, request=None):
                         nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                         staged_pkgs.append(nearest_neighbor)
 
+    # O(n)
     # BUILD AT HUB LIST
     for num in ('6', '28', '32'):
         if 800 <= given_time < 954:
@@ -646,15 +656,6 @@ def calc_status(given_time, request=None):
         if 800 <= given_time < 1020:
             at_hub_list.append(num)
     at_hub_str = ', '.join(at_hub_list)
-
-    # # BUILD PACKAGES EN ROUTE
-    # for pkg in truck1.inventory:
-    #     print(pkg)
-    #     en_route.append(str(pkg.pkg_id))
-    # print()
-    # for pkg in truck2.inventory:
-    #     print(pkg)
-    #     en_route.append(str(pkg.pkg_id))
 
     # en_route_str = ', '.join(en_route)
 
@@ -669,7 +670,8 @@ def calc_status(given_time, request=None):
                         if 1020 <= given_time < delivery_time:
                             en_route.append(str(staged[1]))
 
-    # # BUILD TRUCK2 EN ROUTE LIST
+    # O(n)
+    # BUILD TRUCK2 EN ROUTE LIST
     for num in ('6', '28', '32'):
         for staged in staged_pkgs:
             if num in staged:
@@ -679,7 +681,8 @@ def calc_status(given_time, request=None):
                         if 954 <= given_time < delivery_time:
                             en_route.append(str(staged[1].pkg_id))
 
-    # BUILD COMPLETE EN ROUTE LIST...MAYBE
+    # O(n)
+    # BUILD COMPLETE EN ROUTE LIST
     for num in range(1, 41):
         for bucket in myHash.table:
             for pkg in bucket:
