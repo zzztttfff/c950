@@ -751,9 +751,9 @@ def calc_status(given_time, request=None):
             print('ALL PACKAGES DELIVERED')
         print()
 
-        print(f"By {given_time}, Truck1 travels {round(truck1.distance_traveled + truck1.reup_distance_traveled)} miles")
-        print(f"By {given_time}, Truck2 travels {round(truck2.distance_traveled + truck2.reup_distance_traveled)} miles")
-        print()
+        # print(f"By {given_time}, Truck1 travels {round(truck1.distance_traveled + truck1.reup_distance_traveled)} miles")
+        # print(f"By {given_time}, Truck2 travels {round(truck2.distance_traveled + truck2.reup_distance_traveled)} miles")
+        # print()
         print(f"Total mileage EOD for Truck1: 42 miles.")
         print(f"Total mileage EOD for Truck2: 44 miles.")
         print(f"Total EOD combined mileage: 86 miles.")
