@@ -638,6 +638,15 @@ def calc_status(given_time, request=None):
                         nearest_neighbor[1].status = f"Delivered by Truck1 at {time_of_delivery}"
                         staged_pkgs.append(nearest_neighbor)
 
+    # BUILD AT HUB LIST
+    for num in ('6', '28', '32'):
+        if 800 <= given_time < 954:
+            at_hub_list.append(num)
+    for num in ('25', '18', '23', '11', '9'):
+        if 800 <= given_time < 1020:
+            at_hub_list.append(num)
+    at_hub_str = ', '.join(at_hub_list)
+
     # # BUILD PACKAGES EN ROUTE
     # for pkg in truck1.inventory:
     #     print(pkg)
@@ -660,7 +669,7 @@ def calc_status(given_time, request=None):
                         if 1020 <= given_time < delivery_time:
                             en_route.append(str(staged[1]))
 
-    # BUILD TRUCK2 EN ROUTE LIST
+    # # BUILD TRUCK2 EN ROUTE LIST
     for num in ('6', '28', '32'):
         for staged in staged_pkgs:
             if num in staged:
@@ -671,22 +680,16 @@ def calc_status(given_time, request=None):
                             en_route.append(str(staged[1].pkg_id))
 
     # BUILD COMPLETE EN ROUTE LIST...MAYBE
-    # for num in range(1, 41):
-    #     for bucket in myHash.table:
-    #         for pkg in bucket:
-    #             if str(num) == pkg[1].pkg_id:
-    #                 print(pkg[1])
+    for num in range(1, 41):
+        for bucket in myHash.table:
+            for pkg in bucket:
+                if str(num) == pkg[1].pkg_id:
+                    if pkg[1].status == '':
+                        if pkg[1].pkg_id not in at_hub_list:
+                            if pkg[1].pkg_id not in en_route:
+                                en_route.append(str(pkg[1].pkg_id))
 
     en_route_str = ', '.join(en_route)
-
-    # BUILD AT HUB LIST
-    for num in ('6', '28', '32'):
-        if 800 <= given_time < 954:
-            at_hub_list.append(num)
-    for num in ('25', '18', '23', '11', '9'):
-        if 800 <= given_time < 1020:
-            at_hub_list.append(num)
-    at_hub_str = ', '.join(at_hub_list)
 
     # BUILD DELIVERED PACKAGES
     for key in t1dropped_off_pkgs:
