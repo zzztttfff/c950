@@ -3,14 +3,14 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="C:\Users\zacha\Downloads\WGUPS_Distance_Table.csv">
+        <entry key="C:\Users\zacha\OneDrive\Documents\WGU\c950_pa\WGUPS Package File.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
             </Attribute>
           </value>
         </entry>
-        <entry key="C:\Users\zacha\Downloads\WGUPS_Package_File.csv">
+        <entry key="\WGUPS_Distance_Table.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
